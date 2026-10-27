@@ -1,5 +1,6 @@
 // Funcionários: andam até as máquinas, produzem caixas e levam a saída ao estoque, sem o jogador.
 import * as THREE from 'three';
+import { saidaCheia } from './automacao.js';
 
 const VELOCIDADE = 2.5; // unidades por segundo
 const PAUSA = 1; // segundos entre ações
@@ -24,15 +25,16 @@ export function criarFuncionario(x, z) {
   return { malha: grupo, fase: null, alvo: null, espera: 0, carga: [] };
 }
 
-// Escolhe a próxima tarefa: recolher uma saída cheia, ou produzir numa máquina.
+// Escolhe a próxima tarefa: recolher a saída de uma máquina sem esteira, ou produzir numa máquina manual com espaço.
+// Máquinas automáticas produzem sozinhas, e as que têm esteira não precisam de transporte.
 function escolherTarefa(f, maquinas, acoes) {
-  const comSaida = maquinas.find((m) => m.saida.length > 0);
+  const comSaida = maquinas.find((m) => m.saida.length > 0 && !m.esteira);
   if (comSaida) {
     f.fase = 'recolher';
     f.alvo = { pos: { x: comSaida.x, z: comSaida.z + 0.8 }, maquina: comSaida };
     return;
   }
-  const destino = maquinas[0];
+  const destino = maquinas.find((m) => !m.automatica && !saidaCheia(m));
   if (destino && acoes.podeProduzir()) {
     f.fase = 'produzir';
     f.alvo = { pos: { x: destino.x, z: destino.z + 0.8 }, maquina: destino };

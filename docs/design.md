@@ -143,9 +143,58 @@ Decididas em 2026-10-27, antes da v0.1:
 
 ## Estado de implementação
 
-- v0.1: concluída. Movimentação na grade, posicionamento de máquina e produção manual de uma caixa.
-- v0.2: concluída. Catálogo com tamanho, cor e material (teclas T, C e M) e estoque separado da saída das máquinas (tecla R).
-- Primeira versão jogável: economia com dinheiro inicial de R$ 100, custo de papelão (R$ 2 por caixa), máquina de R$ 60, expedição para vender (tecla V) e meta de R$ 1.000 em vendas. Ainda sem funcionários, automação, clientes, contratos ou save.
+| Versão | Situação | O que existe no jogo |
+| --- | --- | --- |
+| v0.1 | Concluída | Movimentação na grade, posicionamento de máquina (tecla B) e produção manual de caixas (tecla E). |
+| v0.2 | Concluída | Catálogo com tamanho, cor e material (teclas T, C e M) e estoque separado da saída das máquinas (tecla R). |
+| Primeira versão jogável | Concluída | Economia com R$ 100 iniciais, expedição para vender (tecla V), pedidos de cliente com bônus e meta de R$ 1.000 em vendas. |
+| v0.3 | Concluída | Até 3 funcionários (tecla F) escolhem tarefas sozinhos: produzem nas máquinas manuais e levam a saída ao estoque. |
+| v0.4 | Concluída | Esteiras (tecla L) e máquinas automáticas (tecla U). A linha roda sem o jogador e os gargalos aparecem na luz das máquinas. |
+| Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
+
+Ainda não existem: salvamento, câmera com rotação e zoom, clientes no cenário, contratos com prazo, reputação e qualidade.
+
+### v0.4 em detalhe
+
+- **Máquina automática:** custa R$ 100 (tecla U perto da máquina). Fabrica sozinha uma caixa a cada 3 segundos, pagando R$ 2 de papelão por caixa. O produto é o escolhido no catálogo no momento da automação; apertar U de novo reprograma a máquina para a caixa atual, sem custo.
+- **Esteira:** custa R$ 40 (tecla L). Pega a caixa do topo da saída a cada 1,2 segundo e a leva até a prateleira do estoque a 1,5 unidade por segundo. As caixas aparecem andando sobre a esteira.
+- **Limite da saída:** cada máquina guarda até 8 caixas. Com a saída cheia, a máquina para e não gasta papelão. A produção manual (E) e a dos funcionários também respeitam o limite.
+- **Luz de situação:** cinza (manual), verde (produzindo), amarela (sem dinheiro para papelão) e vermelha (saída cheia). O HUD resume a linha: máquinas automáticas, produzindo, paradas e sem papelão.
+- **Funcionários:** ignoram máquinas automáticas na hora de produzir e não recolhem a saída de máquinas com esteira, porque a linha já cuida delas.
+- **Critério de pronto atendido:** uma máquina automática com esteira enche o estoque sem nenhuma ação do jogador. Isso é verificado em `testes/automacao.test.mjs`.
+
+### Pendências conhecidas
+
+- A esteira vai em linha reta da máquina até a prateleira e pode atravessar a oficina. Rotas com curvas entram junto com a construção de esteiras por peças.
+- O tempo da simulação ainda segue o quadro de renderização, com passo máximo de 0,05 segundo. Em aparelhos muito lentos o jogo inteiro fica mais lento. A arquitetura pede tempo de simulação separado.
+- Recarregar a página perde o progresso até o salvamento ser implementado.
+
+## Economia atual
+
+Todos os valores estão em `js/economia.js`, `js/automacao.js` e `js/catalogo.js`.
+
+| Item | Valor |
+| --- | --- |
+| Dinheiro inicial | R$ 100 |
+| Papelão por caixa | R$ 2 |
+| Máquina | R$ 60 |
+| Funcionário | R$ 80 (máximo de 3) |
+| Esteira | R$ 40 |
+| Automação de máquina | R$ 100 |
+| Meta da campanha | R$ 1.000 em vendas |
+| Primeiro pedido | 5 caixas, bônus de R$ 30. Cada pedido cumprido soma 3 caixas e R$ 20 ao seguinte |
+
+| Caixa | Papelão simples | Reforçado |
+| --- | --- | --- |
+| Pequena | R$ 6 | R$ 12 |
+| Média | R$ 10 | R$ 20 |
+| Grande | R$ 16 | R$ 32 |
+
+A cor muda só a aparência. Uma máquina automática produz 20 caixas por minuto de jogo; com caixas grandes reforçadas isso vale R$ 640 por minuto, ou R$ 600 descontado o papelão.
+
+## Próximo passo
+
+v0.5 — Clientes, contratos e reputação: clientes que chegam à oficina com pedidos de produto, quantidade e prazo; reputação que sobe ou cai conforme as entregas. Antes dela, o salvamento versionado é recomendado, porque partidas com linha automática ficam longas.
 
 ## Riscos
 

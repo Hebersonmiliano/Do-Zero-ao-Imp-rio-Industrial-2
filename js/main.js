@@ -1,8 +1,24 @@
-// Cena do Distrito Industrial: chão em grade, luz natural, oficina, jogador e máquinas (v0.1).
+// Cena do Distrito Industrial: chão em grade, luz natural, oficina, jogador, máquinas, funcionários e linha automática.
 import * as THREE from 'three';
 import { registrarObstaculo, cabeAqui } from './grade.js';
 import { criarJogador, atualizarJogador } from './jogador.js';
-import { criarMaquina, criarCaixa, criarEsteira, maquinaProxima } from './producao.js';
+import {
+  criarMaquina,
+  criarCaixa,
+  criarEsteira,
+  maquinaProxima,
+  marcarAutomatica,
+  mostrarEstado,
+  posicionarNaEsteira,
+} from './producao.js';
+import {
+  CAPACIDADE_SAIDA,
+  CUSTO_AUTOMACAO,
+  atualizarAutomacao,
+  estadoMaquina,
+  programar,
+  saidaCheia,
+} from './automacao.js';
 import { ciclar, produtoAtual } from './catalogo.js';
 import { guardarNoEstoque, totalNoEstoque, resumoEstoque, venderTudo, retirarPedido } from './estoque.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
@@ -42,6 +58,7 @@ const elMeta = document.getElementById('meta');
 const elFuncionarios = document.getElementById('funcionarios');
 const elPedido = document.getElementById('pedido');
 const elPedidosCumpridos = document.getElementById('pedidos-cumpridos');
+const elLinha = document.getElementById('linha');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -153,13 +170,44 @@ function atualizarPlacar() {
   const pedido = getPedido();
   elPedido.textContent = `${pedido.quantidade} caixas (bônus R$ ${pedido.bonus})`;
   elPedidosCumpridos.textContent = getPedidosCumpridos();
+  elLinha.textContent = resumoLinha();
+}
+
+// Resumo da linha para o HUD: quantas máquinas são automáticas e onde a produção travou.
+function resumoLinha() {
+  if (maquinas.length === 0) return 'sem máquinas';
+  const podePagar = getDinheiro() >= CUSTO_PRODUCAO;
+  const conta = { produzindo: 0, 'sem-dinheiro': 0, cheia: 0 };
+  for (const m of maquinas) {
+    const estado = estadoMaquina(m, podePagar);
+    if (estado in conta) conta[estado] += 1;
+  }
+  const automaticas = maquinas.filter((m) => m.automatica).length;
+  const partes = [`${automaticas} automática(s)`];
+  if (conta.produzindo) partes.push(`${conta.produzindo} produzindo`);
+  if (conta.cheia) partes.push(`${conta.cheia} parada(s): saída cheia`);
+  if (conta['sem-dinheiro']) partes.push(`${conta['sem-dinheiro']} sem papelão`);
+  return partes.join(' · ');
+}
+
+// Atualiza a luz de cada máquina e o resumo da linha quando alguma situação muda.
+let assinaturaLinha = '';
+function atualizarLuzes() {
+  const podePagar = getDinheiro() >= CUSTO_PRODUCAO;
+  const estados = maquinas.map((m) => estadoMaquina(m, podePagar));
+  maquinas.forEach((m, i) => mostrarEstado(m, estados[i]));
+  const assinatura = estados.join(',');
+  if (assinatura !== assinaturaLinha) {
+    assinaturaLinha = assinatura;
+    elLinha.textContent = resumoLinha();
+  }
 }
 
 // Ações que os funcionários usam na cena: produzir, recolher a saída e depositar no estoque.
 const acoesFuncionario = {
   podeProduzir: () => getDinheiro() >= CUSTO_PRODUCAO,
   produzir(maquina) {
-    if (!pagar(CUSTO_PRODUCAO)) return;
+    if (saidaCheia(maquina) || !pagar(CUSTO_PRODUCAO)) return;
     cena.add(criarCaixa(maquina, produtoAtual()));
     caixas += 1;
     atualizarPlacar();
@@ -196,23 +244,49 @@ function ligarEsteira() {
   mensagem('Esteira ligada ao estoque.');
 }
 
-// Esteiras levam a saída de cada máquina ao estoque a cada 2 segundos, sem ação do jogador.
-function atualizarEsteiras(dt) {
-  for (const m of maquinas) {
-    if (!m.esteira || m.saida.length === 0) {
-      m.cronometro = 0;
-      continue;
-    }
-    m.cronometro += dt;
-    if (m.cronometro < 2) continue;
-    m.cronometro = 0;
-    const levadas = m.saida.splice(0);
-    for (const { malha, produto } of levadas) {
-      cena.remove(malha);
-      guardarNoEstoque(produto);
-    }
+// Linha automática: máquinas automáticas produzem e as esteiras levam as caixas, uma a uma, ao estoque.
+const acoesLinha = {
+  podePagar: () => getDinheiro() >= CUSTO_PRODUCAO,
+  produzir(maquina, produto) {
+    if (!pagar(CUSTO_PRODUCAO)) return;
+    cena.add(criarCaixa(maquina, produto));
+    caixas += 1;
     atualizarPlacar();
+  },
+  posicionar(item, maquina, progresso) {
+    posicionarNaEsteira(item.malha, maquina, progresso);
+  },
+  entregar(item) {
+    cena.remove(item.malha);
+    guardarNoEstoque(item.produto);
+    atualizarPlacar();
+  },
+};
+
+// Torna automática a máquina mais próxima ou troca o produto que ela fabrica.
+function automatizarMaquina() {
+  const maquina = maquinaProxima(jogador.position, maquinas);
+  if (!maquina) {
+    mensagem('Chegue perto de uma máquina para automatizar.');
+    return;
   }
+  if (maquina.automatica) {
+    programar(maquina, produtoAtual());
+    mensagem(`Máquina reprogramada: ${produtoAtual().nome}.`);
+    return;
+  }
+  if (!pagar(CUSTO_AUTOMACAO)) {
+    mensagem(`Automação custa R$ ${CUSTO_AUTOMACAO}. Você tem R$ ${getDinheiro()}.`);
+    return;
+  }
+  programar(maquina, produtoAtual());
+  marcarAutomatica(maquina);
+  atualizarPlacar();
+  mensagem(
+    maquina.esteira
+      ? 'Máquina automática: a linha roda sozinha.'
+      : 'Máquina automática. Ligue uma esteira (L) para a saída não encher.',
+  );
 }
 
 // Contrata um funcionário que aparece perto da oficina e trabalha sozinho.
@@ -259,6 +333,10 @@ function produzirCaixa() {
   const maquina = maquinaProxima(jogador.position, maquinas);
   if (!maquina) {
     mensagem('Chegue perto de uma máquina para produzir.');
+    return;
+  }
+  if (saidaCheia(maquina)) {
+    mensagem(`Saída cheia (${CAPACIDADE_SAIDA} caixas). Recolha com R ou ligue uma esteira.`);
     return;
   }
   if (!pagar(CUSTO_PRODUCAO)) {
@@ -339,6 +417,7 @@ const teclasDeAcao = {
   KeyV: venderNaExpedicao,
   KeyF: contratarFuncionario,
   KeyL: ligarEsteira,
+  KeyU: automatizarMaquina,
   KeyT: () => trocarCatalogo('tamanho', 'Tamanho'),
   KeyC: () => trocarCatalogo('cor', 'Cor'),
   KeyM: () => trocarCatalogo('material', 'Material'),
@@ -364,7 +443,8 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(relogio.getDelta(), 0.05);
   atualizarJogador(jogador, teclas, dt);
   for (const f of funcionarios) atualizarFuncionario(f, dt, maquinas, acoesFuncionario);
-  atualizarEsteiras(dt);
+  atualizarAutomacao(maquinas, dt, acoesLinha);
+  atualizarLuzes();
   renderer.render(cena, camera);
 });
 
