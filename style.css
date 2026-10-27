@@ -1,0 +1,24 @@
+/* ===== Do Zero ao Império Industrial 2 — Distrito Industrial ===== */
+:root {
+  --petroleo: #1f4e5a;
+  --laranja: #f28c28;
+  --concreto: #9aa3a8;
+  --ceu: #dfeaed;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ceu);
+}
+
+#palco, #palco canvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
