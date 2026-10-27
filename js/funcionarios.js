@@ -1,26 +1,15 @@
 // Funcionários: andam até as máquinas, produzem caixas e levam a saída ao estoque, sem o jogador.
-import * as THREE from 'three';
+import { PALETA } from './visual/materiais.js';
+import { animarPessoa, criarPessoa, mostrarCarga } from './visual/pessoa.js';
 import { saidaCheia } from './automacao.js';
 
 const VELOCIDADE = 2.5; // unidades por segundo
 const PAUSA = 1; // segundos entre ações
 export const ESTOQUE_PONTO = { x: -8, z: -6 }; // prateleira de estoque, na cena
 
+// Funcionário: macacão azul-petróleo e capacete amarelo. Mostra nas mãos as caixas que carrega.
 export function criarFuncionario(x, z) {
-  const grupo = new THREE.Group();
-  const corpo = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 0.9, 0.4),
-    new THREE.MeshStandardMaterial({ color: 0x3a6f8a }),
-  );
-  corpo.position.y = 0.65;
-  corpo.castShadow = true;
-  const cabeca = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 12, 8),
-    new THREE.MeshStandardMaterial({ color: 0xe0b08a }),
-  );
-  cabeca.position.y = 1.4;
-  cabeca.castShadow = true;
-  grupo.add(corpo, cabeca);
+  const grupo = criarPessoa({ tronco: PALETA.petroleoClaro, calca: PALETA.petroleoEscuro, capacete: PALETA.amarelo });
   grupo.position.set(x, 0, z);
   return { malha: grupo, fase: null, alvo: null, espera: 0, carga: [] };
 }
@@ -88,11 +77,18 @@ function executar(f, acoes) {
 
 // Avança o funcionário em dt segundos. acoes é o conjunto de funções da cena (produzir, recolher, depositar).
 export function atualizarFuncionario(f, dt, maquinas, acoes) {
+  mostrarCarga(f.malha, f.carga);
   if (f.espera > 0) {
     f.espera -= dt;
+    animarPessoa(f.malha, dt, false);
     return;
   }
   if (!f.alvo) escolherTarefa(f, maquinas, acoes);
-  if (!f.alvo) return;
-  if (andarAte(f, f.alvo.pos, dt)) executar(f, acoes);
+  if (!f.alvo) {
+    animarPessoa(f.malha, dt, false);
+    return;
+  }
+  const chegou = andarAte(f, f.alvo.pos, dt);
+  animarPessoa(f.malha, dt, !chegou);
+  if (chegou) executar(f, acoes);
 }

@@ -24,7 +24,7 @@ const numero = (v, padrao = 0) => (Number.isFinite(v) ? v : padrao);
 const dentro = (v, limite) => Math.max(-limite, Math.min(limite, numero(v)));
 
 // Monta o objeto salvo a partir das partes do jogo.
-export function montarSave({ economia, estoque, escolha, contratos, maquinas, funcionarios, jogador, caixas }) {
+export function montarSave({ economia, estoque, escolha, contratos, maquinas, funcionarios, jogador, caixas, relogio = 0 }) {
   return {
     versao: VERSAO_SAVE,
     salvoEm: new Date().toISOString(),
@@ -33,6 +33,7 @@ export function montarSave({ economia, estoque, escolha, contratos, maquinas, fu
     escolha,
     contratos,
     caixas,
+    relogio,
     jogador: { x: jogador.x, z: jogador.z },
     // Caixas em trânsito na esteira voltam para a saída: assim nenhuma se perde ao recarregar.
     maquinas: maquinas.map((m) => ({
@@ -89,6 +90,7 @@ export function lerSave(texto, { limite = 11.5, capacidade = 8, maxFuncionarios 
     escolha: dados.escolha ?? {},
     contratos: dados.contratos ?? null,
     caixas: Math.max(0, Math.floor(numero(dados.caixas))),
+    relogio: Math.max(0, numero(dados.relogio)), // segundos de jogo desde o início do dia 1
     jogador: { x: dentro(dados.jogador?.x, limite), z: dentro(dados.jogador?.z ?? 4, limite) },
     maquinas,
     funcionarios: lista(dados.funcionarios)

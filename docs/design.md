@@ -124,9 +124,10 @@ Cada versão só começa quando a anterior cumpre o critério de pronto.
 | v0.3 | Funcionários e tarefas | Funcionário executa transporte sem intervenção do jogador | 3 |
 | v0.4 | Máquinas, esteiras e automação | Linha completa roda sem o jogador | 4 |
 | v0.5 | Clientes, contratos e reputação | Contrato aceito, entregue, e a reputação muda | 5 |
+| v0.5.1 | Visual do Distrito (feita fora da ordem original) | Visual igual ou superior ao do primeiro jogo | — |
 | v0.6 | Qualidade, manutenção e energia | Defeitos separados; máquina quebra e exige manutenção; consumo visível | 5 |
 | v0.7 | Veículos e mapa de entregas | Van sai da fábrica com rota no mapa | 6 |
-| v0.8 | Decoração e construção avançada | Terreno comprado e escritório decorado | 5 a 7 |
+| v0.8 | Decoração e construção avançada | Terreno comprado e escritório decorado (a câmera com rotação e zoom já entrou na v0.5.1) | 5 a 7 |
 | v0.9 | Campanha, balanceamento e otimização | Campanha de oito fases jogável do início ao fim | 1 a 8 |
 | v1.0 | Lançamento completo | Várias fábricas, exportação e save estável nos testes | 7 e 8 |
 
@@ -135,7 +136,7 @@ Cada versão só começa quando a anterior cumpre o critério de pronto.
 Decididas em 2026-10-27, antes da v0.1:
 
 - [x] Posicionamento: grade com snap de 1 unidade. Colisão e rotas ficam simples.
-- [x] Câmera: fixa na v0.1. Rotação e zoom entram na v0.8.
+- [x] Câmera: fixa na v0.1. Rotação e zoom entraram na v0.5.1, antes do previsto (v0.8).
 - [x] Stack: Three.js 0.186.1 com módulos ES, sem bundler.
 - [x] Ferramentas: JavaScript puro. TypeScript e bundler só se o código pedir.
 - [x] Trânsito: decorativo até a v0.7, quando entram os veículos de entrega.
@@ -151,10 +152,11 @@ Decididas em 2026-10-27, antes da v0.1:
 | v0.3 | Concluída | Até 3 funcionários (tecla F) escolhem tarefas sozinhos: produzem nas máquinas manuais e levam a saída ao estoque. |
 | v0.4 | Concluída | Esteiras (tecla L) e máquinas automáticas (tecla U). A linha roda sem o jogador e os gargalos aparecem na luz das máquinas. |
 | v0.5 | Concluída | Seis tipos de clientes oferecem contratos com produto exato, quantidade, pagamento e prazo. Reputação de 0 a 100 libera clientes e aumenta pagamentos. Substitui o pedido genérico da primeira versão jogável. |
+| v0.5.1 | Concluída | Visual do Distrito: modelos de oficina, máquinas, esteiras, estoque, doca e van; terreno cercado; ciclo de dia e noite; câmera com rotação e zoom; HUD e rótulos redesenhados. Sem mudança de regras. |
 | Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
-Ainda não existem: câmera com rotação e zoom, clientes andando no cenário, negociação de prazo e preço, qualidade e manutenção.
+Ainda não existem: clientes andando no cenário, negociação de prazo e preço, qualidade e manutenção.
 
 ### v0.4 em detalhe
 
@@ -167,7 +169,6 @@ Ainda não existem: câmera com rotação e zoom, clientes andando no cenário, 
 
 ### Pendências conhecidas
 
-- A esteira vai em linha reta da máquina até a prateleira e pode atravessar a oficina. Rotas com curvas entram junto com a construção de esteiras por peças.
 - O tempo da simulação ainda segue o quadro de renderização, com passo máximo de 0,05 segundo. Em aparelhos muito lentos o jogo inteiro fica mais lento. A arquitetura pede tempo de simulação separado.
 
 ### v0.5 em detalhe
@@ -190,11 +191,22 @@ Ainda não existem: câmera com rotação e zoom, clientes andando no cenário, 
 
 Com contratos, o catálogo passa a importar: a máquina automática precisa ser reprogramada (U) para o produto que o cliente pediu.
 
+### v0.5.1 em detalhe (visual)
+
+Feita antes da v0.6 para fixar o estilo enquanto o cenário ainda é pequeno. A régua foi o primeiro jogo: galpão com detalhes, objetos com forma reconhecível, rótulos no mundo e HUD de jogo. O 2 mantém identidade própria: luz do dia ao ar livre, azul-petróleo, laranja industrial e cinza-concreto.
+
+- **Modelagem:** tudo é montado com blocos e cilindros do Three.js, sem arquivos de modelo. Texturas (concreto, zebrado, lona da esteira, placas) são desenhadas em canvas na hora.
+- **Organização:** o visual fica em `js/visual/`. As regras não mudaram; os módulos de regra continuam sem importar o Three.js.
+- **Esteiras:** a rota saiu de `producao.js` para `js/rotas.js`, com teste que verifica as 492 posições possíveis de máquina.
+- **Câmera:** segue o jogador, gira em volta dele (Q, Z ou arrastando) e dá zoom (+, − ou roda). WASD passou a ser relativo à câmera. Essa parte estava prevista para a v0.8 e foi antecipada.
+- **Dia e noite:** 6 minutos de jogo por dia, começando às 7h. A hora entra no save (campo `relogio`, opcional, sem mudar a versão do save).
+- **HUD:** barra superior com dinheiro, progresso da meta, estoque, produção, máquinas, equipe e relógio; painel de produção à esquerda; avisos no centro; contratos à direita; controles recolhíveis (H).
+
 ### Salvamento em detalhe
 
 - **Onde:** `localStorage` do navegador, na chave `imperio-industrial-2:save`. Cada navegador tem o seu save.
 - **Quando:** a cada 5 segundos, ao fechar a página e ao trocar de aba.
-- **O que:** economia (dinheiro e vendido), quadro de contratos (reputação, ofertas, contratos com o tempo restante, cumpridos e vencidos), estoque por produto, escolha do catálogo, total de caixas produzidas, máquinas (posição, saída, esteira, automação e produto programado), posição dos funcionários e do jogador.
+- **O que:** relógio do dia, economia (dinheiro e vendido), quadro de contratos (reputação, ofertas, contratos com o tempo restante, cumpridos e vencidos), estoque por produto, escolha do catálogo, total de caixas produzidas, máquinas (posição, saída, esteira, automação e produto programado), posição dos funcionários e do jogador.
 - **Produtos:** gravados só pela chave (por exemplo `M-1-0`) e reconstruídos pelo catálogo ao carregar. Se um preço mudar no catálogo, o save antigo usa o preço novo.
 - **Versão:** o save tem o campo `versao` (hoje 2). Uma mudança de formato aumenta a versão e ganha uma função em `MIGRACOES`, que converte o save antigo. Um save de versão mais nova que o jogo não é carregado.
 - **Migração 1 → 2 (v0.5):** o pedido genérico é descartado; os pedidos cumpridos viram contratos cumpridos e dão 5 de reputação cada, a partir de 20.

@@ -6,7 +6,9 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
-**v0.5 — Clientes, contratos e reputação.** Clientes do bairro oferecem contratos com uma caixa exata, quantidade, pagamento e prazo. Entregar no prazo aumenta a reputação, que libera clientes maiores e contratos mais bem pagos; atrasar custa multa e reputação.
+**v0.5.1 — Visual do Distrito.** A oficina virou um prédio de verdade, o terreno ganhou piso, faixas, cerca, doca e van, as máquinas e esteiras têm modelos e animação, o dia vira noite com luzes acendendo, a câmera gira e dá zoom, e o HUD foi redesenhado.
+
+A versão de regras mais recente é a **v0.5 — Clientes, contratos e reputação.** Clientes do bairro oferecem contratos com uma caixa exata, quantidade, pagamento e prazo. Entregar no prazo aumenta a reputação, que libera clientes maiores e contratos mais bem pagos; atrasar custa multa e reputação.
 
 O que já dá para jogar:
 
@@ -25,8 +27,8 @@ O que já dá para jogar:
 
 | Tecla | Ação |
 |---|---|
-| WASD ou setas | Andar |
-| B | Posicionar máquina à frente do jogador (R$ 60) |
+| WASD ou setas | Andar (relativo à câmera: W vai para o fundo da tela) |
+| B | Posicionar máquina na célula marcada no chão à frente do jogador (R$ 60) |
 | E | Produzir uma caixa na máquina próxima (R$ 2 de papelão) |
 | R | Levar a saída da máquina próxima ao estoque |
 | V | Na expedição: entregar os contratos que o estoque cobre; sem contrato pronto, vender o estoque que nenhum contrato pediu |
@@ -35,13 +37,18 @@ O que já dá para jogar:
 | F | Contratar funcionário (R$ 80, até 3) |
 | L | Ligar esteira da máquina próxima até o estoque (R$ 40) |
 | U | Automatizar a máquina próxima (R$ 100); numa máquina já automática, reprograma o produto |
+| Q, Z ou arrastar o mouse | Girar a câmera |
+| + e −, ou roda do mouse | Aproximar e afastar |
+| H | Mostrar ou esconder a lista de controles |
 | N duas vezes | Apagar o progresso e começar um jogo novo |
+
+O quadrado no chão à frente do jogador mostra onde a próxima máquina vai ficar: verde se a célula está livre, vermelho se está ocupada.
 
 ### Luz das máquinas
 
 | Cor | Situação |
 |---|---|
-| Cinza | Máquina manual |
+| Apagada | Máquina manual |
 | Verde | Automática, produzindo |
 | Amarela | Automática, sem dinheiro para papelão |
 | Vermelha | Saída cheia (8 caixas): a máquina parou. Ligue uma esteira ou recolha com R |
@@ -64,6 +71,17 @@ O painel à direita mostra a reputação, até 3 ofertas e os contratos em andam
 | Loja Virtual Clique | 50 | Médias e grandes reforçadas, qualquer cor |
 | Rede Varejo Centro | 70 | Médias e grandes em grande quantidade |
 
+## Visual
+
+- **Terreno:** piso de concreto em placas, faixas de circulação amarelas, área de carga zebrada, cerca com portão e postes de luz.
+- **Oficina:** prédio com portão de enrolar, porta, janelas, letreiro, ar-condicionado e luz quente no interior.
+- **Máquinas:** gabinete com painel aceso, mesa, prensa que desce a cada caixa e torre de luz. As automáticas ganham um braço robótico laranja e uma faixa verde.
+- **Esteiras:** lona animada, laterais amarelas e pés. A rota faz um L e contorna a oficina, a doca e a van.
+- **Estoque e expedição:** a prateleira mostra as caixas guardadas com as cores dos produtos; a doca tem palete, carrinho e a van da empresa.
+- **Pessoas:** jogador de colete laranja e funcionários de capacete amarelo andam com passo animado e carregam as caixas nas mãos.
+- **Dia e noite:** um dia dura 6 minutos de jogo. À noite acendem janelas, letreiros, faróis da van e postes. O relógio fica no canto do HUD e é salvo.
+- **Rótulos no mundo:** estoque, expedição (avisa quando há contrato pronto), saída de cada máquina e os ganhos subindo da doca a cada venda.
+
 ## Salvamento
 
 O jogo salva sozinho a cada 5 segundos e ao fechar ou trocar de aba. Ficam guardados o dinheiro, as vendas, a reputação, as ofertas e os contratos com o tempo que falta, o estoque, a caixa escolhida no catálogo, as máquinas (com saída, esteira e automação), os funcionários e a posição do jogador. O save fica no navegador de quem joga; outro navegador ou aparelho começa do zero. Partidas salvas antes da v0.5 abrem normalmente: os pedidos cumpridos viram reputação.
@@ -80,11 +98,12 @@ Depois abra `http://localhost:8000`.
 
 ## Testes
 
-As regras da linha automática, dos contratos e do salvamento não dependem do Three.js e rodam no Node 18 ou mais novo:
+As regras da linha automática, dos contratos, das rotas de esteira e do salvamento não dependem do Three.js e rodam no Node 18 ou mais novo:
 
 ```bash
 node testes/automacao.test.mjs
 node testes/contratos.test.mjs
+node testes/rotas.test.mjs
 node testes/salvamento.test.mjs
 ```
 
@@ -95,10 +114,19 @@ node testes/salvamento.test.mjs
 | `index.html` | Página, HUD, painel de contratos e mapa de importação do Three.js |
 | `style.css` | Estilo da página e cores de base |
 | `js/main.js` | Cena, luz, oficina, expedição, teclas e laço de renderização |
-| `js/cenario.js` | Bairro em volta da área de jogo: rua, calçadas, prédios e árvores |
+| `js/cenario.js` | Bairro em volta da área de jogo: rua, calçadas, postes, prédios, árvores e carros |
+| `js/visual/materiais.js` | Paleta, materiais, texturas desenhadas em canvas e luzes que acendem à noite |
+| `js/visual/ambiente.js` | Céu, sol, neblina e ciclo de dia e noite |
+| `js/visual/camera.js` | Câmera que segue o jogador, gira e dá zoom |
+| `js/visual/terreno.js` | Piso, faixas, cerca, postes e cursor de posicionamento |
+| `js/visual/oficina.js` | Prédio da oficina |
+| `js/visual/estacoes.js` | Prateleira do estoque, doca de expedição, van e modelo de caixa |
+| `js/visual/pessoa.js` | Modelo e animação do jogador e dos funcionários |
+| `js/visual/rotulos.js` | Rótulos que acompanham pontos do mundo e ganhos flutuantes |
 | `js/grade.js` | Limites do terreno e obstáculos da grade |
-| `js/jogador.js` | Personagem do jogador, movimento e colisão |
-| `js/producao.js` | Máquinas, caixas na saída, esteiras e luz de situação |
+| `js/jogador.js` | Movimento do jogador relativo à câmera e colisão |
+| `js/producao.js` | Modelos e animação de máquinas, caixas na saída e esteiras |
+| `js/rotas.js` | Rotas em L das esteiras, contornando oficina, doca e van |
 | `js/automacao.js` | Regras da linha automática: produção sozinha, limite da saída e vazão da esteira |
 | `js/contratos.js` | Clientes, ofertas, contratos, prazos, multas e reputação |
 | `js/salvamento.js` | Save versionado no navegador: montar, validar, migrar, gravar e apagar |

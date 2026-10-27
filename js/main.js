@@ -1,4 +1,5 @@
-// Cena do Distrito Industrial: chão em grade, luz natural, oficina, jogador, máquinas, funcionários e linha automática.
+// Cena do Distrito Industrial: terreno, oficina, jogador, máquinas, funcionários, linha automática e contratos.
+// O visual (modelos, luz, câmera e rótulos) fica em js/visual/; aqui ficam as regras ligadas à cena.
 import * as THREE from 'three';
 import { registrarObstaculo, cabeAqui } from './grade.js';
 import { criarJogador, atualizarJogador } from './jogador.js';
@@ -10,6 +11,8 @@ import {
   marcarAutomatica,
   mostrarEstado,
   posicionarNaEsteira,
+  animarEsteiras,
+  animarMaquina,
 } from './producao.js';
 import {
   CAPACIDADE_SAIDA,
@@ -45,6 +48,12 @@ import {
 } from './contratos.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
 import { criarCenario } from './cenario.js';
+import { criarAmbiente } from './visual/ambiente.js';
+import { criarCameraJogo } from './visual/camera.js';
+import { criarRotulos } from './visual/rotulos.js';
+import { criarOficina } from './visual/oficina.js';
+import { criarCursor, criarTerreno } from './visual/terreno.js';
+import { criarExpedicao, criarPrateleira, criarVan } from './visual/estacoes.js';
 import {
   CUSTO_ESTEIRA,
   CUSTO_FUNCIONARIO,
@@ -61,13 +70,6 @@ import {
   venceu,
 } from './economia.js';
 
-const COR = {
-  petroleo: 0x1f4e5a,
-  laranja: 0xf28c28,
-  concreto: 0x9aa3a8,
-  ceu: 0xdfeaed,
-};
-
 const palco = document.getElementById('palco');
 const elCaixas = document.getElementById('caixas');
 const elMaquinas = document.getElementById('maquinas');
@@ -83,6 +85,10 @@ const elOfertas = document.getElementById('ofertas');
 const elAtivos = document.getElementById('ativos');
 const elHistorico = document.getElementById('historico-contratos');
 const elLinha = document.getElementById('linha');
+const elRelogio = document.getElementById('relogio');
+const elBarraMeta = document.getElementById('barra-meta');
+const elCorProduto = document.getElementById('cor-produto');
+const elAjuda = document.getElementById('ajuda');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -91,82 +97,38 @@ renderer.shadowMap.enabled = true;
 palco.appendChild(renderer.domElement);
 
 const cena = new THREE.Scene();
-cena.background = new THREE.Color(COR.ceu);
+const ambiente = criarAmbiente(cena, renderer);
+const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 400);
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 500);
-camera.position.set(18, 16, 18);
-camera.lookAt(0, 0, 0);
-
-// Luz natural: céu, sol e sombras.
-cena.add(new THREE.HemisphereLight(0xffffff, COR.concreto, 1.2));
-const sol = new THREE.DirectionalLight(0xffffff, 2);
-sol.position.set(18, 30, 14);
-sol.castShadow = true;
-sol.shadow.mapSize.set(2048, 2048);
-Object.assign(sol.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26 });
-cena.add(sol);
-
-// Chão de concreto com grade de células de 1 unidade (linhas nos limites das células).
-const chao = new THREE.Mesh(
-  new THREE.PlaneGeometry(24, 24),
-  new THREE.MeshStandardMaterial({ color: COR.concreto }),
-);
-chao.rotation.x = -Math.PI / 2;
-chao.receiveShadow = true;
-cena.add(chao);
 criarCenario(cena);
+criarTerreno(cena);
+const cursor = criarCursor(cena);
 
-const grade = new THREE.GridHelper(24, 24, COR.petroleo, COR.petroleo);
-grade.material.transparent = true;
-grade.material.opacity = 0.25;
-grade.position.set(0.5, 0.01, 0.5);
-cena.add(grade);
-
-// Oficina inicial (placeholder): 5 x 3 células, centrada na origem.
-const oficina = new THREE.Mesh(
-  new THREE.BoxGeometry(5, 3, 3),
-  new THREE.MeshStandardMaterial({ color: COR.petroleo }),
-);
-oficina.position.set(0, 1.5, 0);
-oficina.castShadow = true;
-oficina.receiveShadow = true;
-cena.add(oficina);
+// Oficina alugada no centro do terreno (5 x 3 células).
+criarOficina(cena);
 registrarObstaculo(-2.5, 2.5, -1.5, 1.5);
 
-// Placa com a cor de destaque da série.
-const placa = new THREE.Mesh(
-  new THREE.BoxGeometry(3, 0.5, 0.2),
-  new THREE.MeshStandardMaterial({ color: COR.laranja }),
-);
-placa.position.set(0, 3.5, 2.1);
-placa.castShadow = true;
-cena.add(placa);
-
-// Expedição: onde o estoque é vendido (tecla V, perto do ponto).
+// Expedição: doca onde contratos são entregues e o estoque livre é vendido (tecla V, perto do ponto).
 const EXPEDICAO = { x: -8, z: 4 };
-const expedicao = new THREE.Mesh(
-  new THREE.BoxGeometry(2, 1, 2),
-  new THREE.MeshStandardMaterial({ color: COR.laranja }),
-);
-expedicao.position.set(EXPEDICAO.x, 0.5, EXPEDICAO.z);
-expedicao.castShadow = true;
-expedicao.receiveShadow = true;
-cena.add(expedicao);
+criarExpedicao(cena, EXPEDICAO.x, EXPEDICAO.z);
 registrarObstaculo(EXPEDICAO.x - 1, EXPEDICAO.x + 1, EXPEDICAO.z - 1, EXPEDICAO.z + 1);
+criarVan(cena, EXPEDICAO.x, 9.4);
+registrarObstaculo(EXPEDICAO.x - 0.9, EXPEDICAO.x + 0.9, 7.85, 12.2);
 
-// Prateleira do estoque: onde os funcionários depositam a saída das máquinas.
-const prateleira = new THREE.Mesh(
-  new THREE.BoxGeometry(2, 1.2, 1),
-  new THREE.MeshStandardMaterial({ color: COR.petroleo }),
-);
-prateleira.position.set(ESTOQUE_PONTO.x, 0.6, ESTOQUE_PONTO.z);
-prateleira.castShadow = true;
-prateleira.receiveShadow = true;
-cena.add(prateleira);
+// Prateleira do estoque: onde os funcionários e as esteiras deixam as caixas.
+const prateleira = criarPrateleira(cena, ESTOQUE_PONTO.x, ESTOQUE_PONTO.z);
 registrarObstaculo(ESTOQUE_PONTO.x - 1, ESTOQUE_PONTO.x + 1, ESTOQUE_PONTO.z - 0.5, ESTOQUE_PONTO.z + 0.5);
+
+const rotulos = criarRotulos(document.getElementById('rotulos'), camera);
+rotulos.adicionar({ x: ESTOQUE_PONTO.x, y: 2.8, z: ESTOQUE_PONTO.z }, { texto: () => `ESTOQUE · ${totalNoEstoque()}`, classe: 'estacao' });
+rotulos.adicionar({ x: EXPEDICAO.x, y: 3.1, z: EXPEDICAO.z }, {
+  texto: () => (quadro.ativos.some((c) => quantidadeDe(c.chave) >= c.quantidade) ? 'EXPEDIÇÃO · contrato pronto!' : 'EXPEDIÇÃO'),
+  classe: () => (quadro.ativos.some((c) => quantidadeDe(c.chave) >= c.quantidade) ? 'estacao pronto' : 'estacao'),
+});
 
 const jogador = criarJogador(0, 4);
 cena.add(jogador);
+const cameraJogo = criarCameraJogo(camera, renderer.domElement, jogador.position);
 
 const maquinas = [];
 const funcionarios = [];
@@ -179,19 +141,28 @@ let timerMensagem = null;
 function mensagem(texto) {
   elMensagem.textContent = texto;
   clearTimeout(timerMensagem);
-  timerMensagem = setTimeout(() => (elMensagem.textContent = ''), 2000);
+  timerMensagem = setTimeout(() => (elMensagem.textContent = ''), 3000);
 }
+
+const reais = (v) => `R$ ${Math.round(v).toLocaleString('pt-BR')}`;
+const corCss = (hex) => `#${hex.toString(16).padStart(6, '0')}`;
 
 function atualizarPlacar() {
   elCaixas.textContent = caixas;
   elMaquinas.textContent = maquinas.length;
-  elProduto.textContent = produtoAtual().nome;
+  const produto = produtoAtual();
+  elProduto.textContent = produto.nome;
+  elCorProduto.style.background = corCss(produto.cor);
   elEstoque.textContent = totalNoEstoque();
   elDetalheEstoque.textContent = resumoEstoque();
-  elDinheiro.textContent = getDinheiro();
-  elMeta.textContent = `${getVendido()} de ${META_VENDAS}`;
+  elDinheiro.textContent = reais(getDinheiro());
+  elMeta.textContent = `${reais(getVendido())} de ${reais(META_VENDAS)}`;
+  elBarraMeta.style.width = `${Math.min(100, (getVendido() / META_VENDAS) * 100)}%`;
   elFuncionarios.textContent = funcionarios.length;
   elLinha.textContent = resumoLinha();
+  prateleira.atualizar(
+    exportarEstoque().map(([chave, quantidade]) => ({ cor: produtoPorChave(chave)?.cor ?? 0xc89b5a, quantidade })),
+  );
 }
 
 // Resumo da linha para o HUD: quantas máquinas são automáticas e onde a produção travou.
@@ -327,6 +298,14 @@ function contratarFuncionario() {
   mensagem('Funcionário contratado.');
 }
 
+// Rótulo sobre a máquina: caixas na saída, com a cor da situação.
+function rotularMaquina(maquina) {
+  rotulos.adicionar({ x: maquina.x, y: 2.15, z: maquina.z }, {
+    texto: () => (maquina.saida.length ? `${maquina.saida.length}/${CAPACIDADE_SAIDA}` : ''),
+    classe: () => `maquina ${maquina.luz.userData.estado ?? 'manual'}`,
+  });
+}
+
 // Coloca uma máquina na célula à frente do jogador (1,5 célula), se a célula estiver livre.
 function posicionarMaquina() {
   const p = jogador.position;
@@ -344,6 +323,7 @@ function posicionarMaquina() {
   const maquina = criarMaquina(cx, cz);
   cena.add(maquina.malha);
   maquinas.push(maquina);
+  rotularMaquina(maquina);
   registrarObstaculo(cx - 0.45, cx + 0.45, cz - 0.45, cz + 0.45);
   atualizarPlacar();
   mensagem('Máquina posicionada.');
@@ -394,6 +374,7 @@ function recolherSaida() {
 function registrarVenda(valor, texto) {
   const jaVencida = venceu();
   receber(valor);
+  rotulos.flutuar({ x: EXPEDICAO.x, y: 2.2, z: EXPEDICAO.z }, `+${reais(valor)}`);
   atualizarPlacar();
   mensagem(
     !jaVencida && venceu()
@@ -516,6 +497,13 @@ const teclasDeAcao = {
   KeyL: ligarEsteira,
   KeyU: automatizarMaquina,
   KeyN: novoJogo,
+  KeyQ: () => cameraJogo.girar(-1),
+  KeyZ: () => cameraJogo.girar(1),
+  Equal: () => cameraJogo.zoom(1 / 1.15),
+  NumpadAdd: () => cameraJogo.zoom(1 / 1.15),
+  Minus: () => cameraJogo.zoom(1.15),
+  NumpadSubtract: () => cameraJogo.zoom(1.15),
+  KeyH: () => elAjuda.classList.toggle('aberta'),
   Digit1: () => aceitarOferta(0),
   Digit2: () => aceitarOferta(1),
   Digit3: () => aceitarOferta(2),
@@ -542,7 +530,27 @@ function ajustarTamanho() {
 }
 window.addEventListener('resize', ajustarTamanho);
 
-const relogio = new THREE.Clock();
+// Partes só visuais: dia e noite, câmera, esteiras, máquinas, cursor, rótulos e relógio.
+let textoRelogio = '';
+function animarCena(dt) {
+  ambiente.atualizar(dt);
+  cameraJogo.atualizar(dt, jogador.position);
+  animarEsteiras(dt);
+  for (const m of maquinas) animarMaquina(m, dt, m.luz.userData.estado === 'produzindo');
+  const f = jogador.userData.frente;
+  const cx = Math.round(jogador.position.x + f.x * 1.5);
+  const cz = Math.round(jogador.position.z + f.z * 1.5);
+  if (Math.abs(cx) <= 11 && Math.abs(cz) <= 11) cursor.mostrar(cx, cz, cabeAqui(cx, cz));
+  else cursor.esconder();
+  rotulos.atualizar();
+  const texto = ambiente.texto();
+  if (texto !== textoRelogio) {
+    textoRelogio = texto;
+    elRelogio.textContent = texto;
+  }
+}
+
+const relogio = new THREE.Timer();
 // ===== Salvamento =====
 
 function salvarJogo() {
@@ -553,6 +561,7 @@ function salvarJogo() {
       escolha: exportarEscolha(),
       contratos: exportarQuadro(quadro),
       caixas,
+      relogio: ambiente.exportar(),
       jogador: jogador.position,
       maquinas,
       funcionarios: funcionarios.map((f) => f.malha.position),
@@ -569,11 +578,13 @@ function restaurarJogo() {
   importarEscolha(save.escolha);
   quadro = importarQuadro(save.contratos, produtoPorChave);
   caixas = save.caixas;
+  ambiente.importar(save.relogio);
   for (const dados of save.maquinas) {
     if (!cabeAqui(dados.x, dados.z)) continue;
     const maquina = criarMaquina(dados.x, dados.z);
     cena.add(maquina.malha);
     maquinas.push(maquina);
+    rotularMaquina(maquina);
     registrarObstaculo(dados.x - 0.45, dados.x + 0.45, dados.z - 0.45, dados.z + 0.45);
     for (const chave of dados.saida) {
       const produto = produtoPorChave(chave);
@@ -624,12 +635,14 @@ document.addEventListener('visibilitychange', () => {
 if (restaurarJogo()) mensagem('Progresso carregado.');
 
 renderer.setAnimationLoop(() => {
+  relogio.update();
   const dt = Math.min(relogio.getDelta(), 0.05);
-  atualizarJogador(jogador, teclas, dt);
+  atualizarJogador(jogador, teclas, dt, cameraJogo.giro);
   for (const f of funcionarios) atualizarFuncionario(f, dt, maquinas, acoesFuncionario);
   atualizarAutomacao(maquinas, dt, acoesLinha);
   avancarContratos(dt);
   atualizarLuzes();
+  animarCena(dt);
   renderer.render(cena, camera);
 });
 
