@@ -18,8 +18,7 @@ O que já dá para jogar:
 - Contratar até 3 funcionários que produzem e levam caixas ao estoque sozinhos.
 - Ligar esteiras e automatizar máquinas.
 - Vencer a campanha com R$ 1.000 em vendas.
-
-Ainda não há salvamento: recarregar a página recomeça o jogo.
+- Continuar de onde parou: o jogo salva sozinho no navegador.
 
 ## Controles
 
@@ -34,6 +33,7 @@ Ainda não há salvamento: recarregar a página recomeça o jogo.
 | F | Contratar funcionário (R$ 80, até 3) |
 | L | Ligar esteira da máquina próxima até o estoque (R$ 40) |
 | U | Automatizar a máquina próxima (R$ 100); numa máquina já automática, reprograma o produto |
+| N duas vezes | Apagar o progresso e começar um jogo novo |
 
 ### Luz das máquinas
 
@@ -43,6 +43,10 @@ Ainda não há salvamento: recarregar a página recomeça o jogo.
 | Verde | Automática, produzindo |
 | Amarela | Automática, sem dinheiro para papelão |
 | Vermelha | Saída cheia (8 caixas): a máquina parou. Ligue uma esteira ou recolha com R |
+
+## Salvamento
+
+O jogo salva sozinho a cada 5 segundos e ao fechar ou trocar de aba. Ficam guardados o dinheiro, as vendas, o pedido atual, o estoque, a caixa escolhida no catálogo, as máquinas (com saída, esteira e automação), os funcionários e a posição do jogador. O save fica no navegador de quem joga; outro navegador ou aparelho começa do zero.
 
 ## Como rodar
 
@@ -56,10 +60,11 @@ Depois abra `http://localhost:8000`.
 
 ## Testes
 
-As regras da linha automática não dependem do Three.js e rodam no Node 18 ou mais novo:
+As regras da linha automática e do salvamento não dependem do Three.js e rodam no Node 18 ou mais novo:
 
 ```bash
 node testes/automacao.test.mjs
+node testes/salvamento.test.mjs
 ```
 
 ## Estrutura
@@ -74,6 +79,7 @@ node testes/automacao.test.mjs
 | `js/jogador.js` | Personagem do jogador, movimento e colisão |
 | `js/producao.js` | Máquinas, caixas na saída, esteiras e luz de situação |
 | `js/automacao.js` | Regras da linha automática: produção sozinha, limite da saída e vazão da esteira |
+| `js/salvamento.js` | Save versionado no navegador: montar, validar, migrar, gravar e apagar |
 | `js/catalogo.js` | Tamanhos, cores e materiais das caixas |
 | `js/estoque.js` | Estoque separado por produto, vendas e retirada de pedidos |
 | `js/economia.js` | Dinheiro, custos, pedidos de cliente e meta da campanha |

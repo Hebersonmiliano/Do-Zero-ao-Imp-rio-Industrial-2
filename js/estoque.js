@@ -19,6 +19,21 @@ export function resumoEstoque() {
   return [...itens.values()].map((i) => `${i.quantidade}× ${i.nome}`).join(' · ');
 }
 
+// Salvamento: lista de [chave do produto, quantidade].
+export function exportarEstoque() {
+  return [...itens.entries()].map(([chave, item]) => [chave, item.quantidade]);
+}
+
+// Restaura o estoque. produtoPorChave reconstrói nome e valor pelo catálogo atual; chaves desconhecidas são ignoradas.
+export function importarEstoque(lista, produtoPorChave) {
+  itens.clear();
+  for (const [chave, quantidade] of Array.isArray(lista) ? lista : []) {
+    const produto = produtoPorChave(chave);
+    const q = Math.floor(quantidade);
+    if (produto && q > 0) guardarNoEstoque(produto, q);
+  }
+}
+
 // Esvazia o estoque e devolve quanto ele vale em R$.
 export function venderTudo() {
   let valor = 0;

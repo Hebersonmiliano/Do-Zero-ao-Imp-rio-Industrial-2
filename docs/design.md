@@ -150,9 +150,10 @@ Decididas em 2026-10-27, antes da v0.1:
 | Primeira versão jogável | Concluída | Economia com R$ 100 iniciais, expedição para vender (tecla V), pedidos de cliente com bônus e meta de R$ 1.000 em vendas. |
 | v0.3 | Concluída | Até 3 funcionários (tecla F) escolhem tarefas sozinhos: produzem nas máquinas manuais e levam a saída ao estoque. |
 | v0.4 | Concluída | Esteiras (tecla L) e máquinas automáticas (tecla U). A linha roda sem o jogador e os gargalos aparecem na luz das máquinas. |
+| Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
-Ainda não existem: salvamento, câmera com rotação e zoom, clientes no cenário, contratos com prazo, reputação e qualidade.
+Ainda não existem: câmera com rotação e zoom, clientes no cenário, contratos com prazo, reputação e qualidade.
 
 ### v0.4 em detalhe
 
@@ -167,7 +168,17 @@ Ainda não existem: salvamento, câmera com rotação e zoom, clientes no cenár
 
 - A esteira vai em linha reta da máquina até a prateleira e pode atravessar a oficina. Rotas com curvas entram junto com a construção de esteiras por peças.
 - O tempo da simulação ainda segue o quadro de renderização, com passo máximo de 0,05 segundo. Em aparelhos muito lentos o jogo inteiro fica mais lento. A arquitetura pede tempo de simulação separado.
-- Recarregar a página perde o progresso até o salvamento ser implementado.
+
+### Salvamento em detalhe
+
+- **Onde:** `localStorage` do navegador, na chave `imperio-industrial-2:save`. Cada navegador tem o seu save.
+- **Quando:** a cada 5 segundos, ao fechar a página e ao trocar de aba.
+- **O que:** economia (dinheiro, vendido, pedido atual e pedidos cumpridos), estoque por produto, escolha do catálogo, total de caixas produzidas, máquinas (posição, saída, esteira, automação e produto programado), posição dos funcionários e do jogador.
+- **Produtos:** gravados só pela chave (por exemplo `M-1-0`) e reconstruídos pelo catálogo ao carregar. Se um preço mudar no catálogo, o save antigo usa o preço novo.
+- **Versão:** o save tem o campo `versao` (hoje 1). Uma mudança de formato aumenta a versão e ganha uma função em `MIGRACOES`, que converte o save antigo. Um save de versão mais nova que o jogo não é carregado.
+- **Validação:** posições fora do terreno são trazidas para dentro, máquinas repetidas na mesma célula são descartadas, a saída respeita o limite de 8 caixas e os funcionários, o limite de 3. Se o armazenamento estiver bloqueado, o jogo roda sem salvar.
+- **Esteiras:** caixas que estavam andando na esteira voltam para a saída da máquina ao carregar, para nenhuma se perder.
+- **Testes:** `testes/salvamento.test.mjs`.
 
 ## Economia atual
 
@@ -194,7 +205,7 @@ A cor muda só a aparência. Uma máquina automática produz 20 caixas por minut
 
 ## Próximo passo
 
-v0.5 — Clientes, contratos e reputação: clientes que chegam à oficina com pedidos de produto, quantidade e prazo; reputação que sobe ou cai conforme as entregas. Antes dela, o salvamento versionado é recomendado, porque partidas com linha automática ficam longas.
+v0.5 — Clientes, contratos e reputação: clientes que chegam à oficina com pedidos de produto, quantidade e prazo; reputação que sobe ou cai conforme as entregas. O save já está pronto para receber os novos dados por meio de uma migração da versão 1 para a 2.
 
 ## Riscos
 

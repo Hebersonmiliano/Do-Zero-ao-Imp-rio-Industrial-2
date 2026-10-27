@@ -25,13 +25,39 @@ export function ciclar(campo) {
   escolha[campo] = (escolha[campo] + 1) % listas[campo].length;
 }
 
+// Salvamento: índices da escolha atual.
+export function exportarEscolha() {
+  return { ...escolha };
+}
+
+export function importarEscolha(e = {}) {
+  for (const campo of Object.keys(listas)) {
+    const i = e[campo];
+    escolha[campo] = Number.isInteger(i) && i >= 0 && i < listas[campo].length ? i : 0;
+  }
+}
+
+// Reconstrói um produto a partir da chave salva (ex.: "M-1-0"). Devolve null se a chave não existe.
+export function produtoPorChave(chave) {
+  const [id, cor, material] = String(chave).split('-');
+  const t = TAMANHOS.findIndex((x) => x.id === id);
+  const c = Number(cor);
+  const m = Number(material);
+  if (t < 0 || !CORES[c] || !MATERIAIS[m] || cor === '' || material === '') return null;
+  return montarProduto(t, c, m);
+}
+
 // Produto definido pela escolha atual: chave para o estoque, nome para a tela e aparência para a malha.
 export function produtoAtual() {
-  const t = TAMANHOS[escolha.tamanho];
-  const c = CORES[escolha.cor];
-  const m = MATERIAIS[escolha.material];
+  return montarProduto(escolha.tamanho, escolha.cor, escolha.material);
+}
+
+function montarProduto(it, ic, im) {
+  const t = TAMANHOS[it];
+  const c = CORES[ic];
+  const m = MATERIAIS[im];
   return {
-    chave: `${t.id}-${escolha.cor}-${escolha.material}`,
+    chave: `${t.id}-${ic}-${im}`,
     nome: `${t.nome} ${c.nome.toLowerCase()}, ${m.nome.toLowerCase()}`,
     escala: t.escala,
     altura: m.altura,

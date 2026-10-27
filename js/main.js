@@ -19,8 +19,17 @@ import {
   programar,
   saidaCheia,
 } from './automacao.js';
-import { ciclar, produtoAtual } from './catalogo.js';
-import { guardarNoEstoque, totalNoEstoque, resumoEstoque, venderTudo, retirarPedido } from './estoque.js';
+import { ciclar, produtoAtual, produtoPorChave, exportarEscolha, importarEscolha } from './catalogo.js';
+import {
+  guardarNoEstoque,
+  totalNoEstoque,
+  resumoEstoque,
+  venderTudo,
+  retirarPedido,
+  exportarEstoque,
+  importarEstoque,
+} from './estoque.js';
+import { apagar, carregar, gravar, montarSave } from './salvamento.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
 import { criarCenario } from './cenario.js';
 import {
@@ -30,6 +39,8 @@ import {
   CUSTO_PRODUCAO,
   META_VENDAS,
   cumprirPedido,
+  exportarEconomia,
+  importarEconomia,
   getDinheiro,
   getPedido,
   getPedidosCumpridos,
@@ -418,6 +429,7 @@ const teclasDeAcao = {
   KeyF: contratarFuncionario,
   KeyL: ligarEsteira,
   KeyU: automatizarMaquina,
+  KeyN: novoJogo,
   KeyT: () => trocarCatalogo('tamanho', 'Tamanho'),
   KeyC: () => trocarCatalogo('cor', 'Cor'),
   KeyM: () => trocarCatalogo('material', 'Material'),
@@ -439,6 +451,84 @@ function ajustarTamanho() {
 window.addEventListener('resize', ajustarTamanho);
 
 const relogio = new THREE.Clock();
+// ===== Salvamento =====
+
+function salvarJogo() {
+  return gravar(
+    montarSave({
+      economia: exportarEconomia(),
+      estoque: exportarEstoque(),
+      escolha: exportarEscolha(),
+      caixas,
+      jogador: jogador.position,
+      maquinas,
+      funcionarios: funcionarios.map((f) => f.malha.position),
+    }),
+  );
+}
+
+// Recria a oficina a partir do save: máquinas com saída, esteira e automação, funcionários e jogador.
+function restaurarJogo() {
+  const save = carregar(undefined, { capacidade: CAPACIDADE_SAIDA, maxFuncionarios: LIMITE_FUNCIONARIOS });
+  if (!save) return false;
+  importarEconomia(save.economia);
+  importarEstoque(save.estoque, produtoPorChave);
+  importarEscolha(save.escolha);
+  caixas = save.caixas;
+  for (const dados of save.maquinas) {
+    if (!cabeAqui(dados.x, dados.z)) continue;
+    const maquina = criarMaquina(dados.x, dados.z);
+    cena.add(maquina.malha);
+    maquinas.push(maquina);
+    registrarObstaculo(dados.x - 0.45, dados.x + 0.45, dados.z - 0.45, dados.z + 0.45);
+    for (const chave of dados.saida) {
+      const produto = produtoPorChave(chave);
+      if (produto) cena.add(criarCaixa(maquina, produto));
+    }
+    if (dados.esteira) {
+      maquina.esteira = criarEsteira(maquina, ESTOQUE_PONTO);
+      cena.add(maquina.esteira);
+    }
+    const produto = dados.produto && produtoPorChave(dados.produto);
+    if (dados.automatica && produto) {
+      programar(maquina, produto);
+      marcarAutomatica(maquina);
+    }
+  }
+  for (const pos of save.funcionarios) {
+    const f = criarFuncionario(pos.x, pos.z);
+    cena.add(f.malha);
+    funcionarios.push(f);
+  }
+  jogador.position.set(save.jogador.x, 0, save.jogador.z);
+  return true;
+}
+
+// Novo jogo: apertar N duas vezes em 3 segundos apaga o save e recomeça.
+let pedidoNovoJogo = 0;
+function novoJogo() {
+  const agora = performance.now();
+  if (agora - pedidoNovoJogo > 3000) {
+    pedidoNovoJogo = agora;
+    mensagem('Aperte N de novo para apagar o progresso e recomeçar.');
+    return;
+  }
+  salvarAoSair = false;
+  clearInterval(timerSalvamento);
+  apagar();
+  location.reload();
+}
+
+let salvarAoSair = true;
+const INTERVALO_SALVAMENTO = 5000; // ms
+const timerSalvamento = setInterval(() => salvarAoSair && salvarJogo(), INTERVALO_SALVAMENTO);
+window.addEventListener('pagehide', () => salvarAoSair && salvarJogo());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && salvarAoSair) salvarJogo();
+});
+
+if (restaurarJogo()) mensagem('Progresso carregado.');
+
 renderer.setAnimationLoop(() => {
   const dt = Math.min(relogio.getDelta(), 0.05);
   atualizarJogador(jogador, teclas, dt);

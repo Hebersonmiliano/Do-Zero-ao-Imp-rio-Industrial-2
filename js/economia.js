@@ -49,6 +49,24 @@ export function receber(valor) {
   vendido += valor;
 }
 
+// Salvamento: estado da economia como dados simples.
+export function exportarEconomia() {
+  return { dinheiro, vendido, pedido: { ...pedido }, pedidosCumpridos };
+}
+
+// Restaura a economia a partir de um save já validado. Valores inválidos voltam ao padrão.
+export function importarEconomia(d = {}) {
+  const numero = (v, padrao) => (Number.isFinite(v) && v >= 0 ? v : padrao);
+  dinheiro = numero(d.dinheiro, DINHEIRO_INICIAL);
+  vendido = numero(d.vendido, 0);
+  pedidosCumpridos = Math.floor(numero(d.pedidosCumpridos, 0));
+  const p = d.pedido ?? {};
+  pedido = {
+    quantidade: Math.max(1, Math.floor(numero(p.quantidade, 5))),
+    bonus: numero(p.bonus, 30),
+  };
+}
+
 export function venceu() {
   return vendido >= META_VENDAS;
 }
