@@ -130,16 +130,20 @@ Cada versão só começa quando a anterior cumpre o critério de pronto.
 | v0.9 | Campanha, balanceamento e otimização | Campanha de oito fases jogável do início ao fim | 1 a 8 |
 | v1.0 | Lançamento completo | Várias fábricas, exportação e save estável nos testes | 7 e 8 |
 
-## Decisões em aberto
+## Decisões
 
-Estas decisões precisam ser tomadas antes da v0.1.
+Decididas em 2026-10-27, antes da v0.1:
 
-- [ ] Posicionamento: grade com snap ou livre? A grade simplifica colisão e rotas.
-- [ ] Câmera: rotação e zoom entram na v0.1 ou depois?
-- [ ] Stack: manter Three.js atual com módulos ES ou outra versão?
-- [ ] Ferramentas: usar bundler e TypeScript ou manter JavaScript puro?
-- [ ] Trânsito: ruas e carros serão simulados ou apenas decorativos?
-- [ ] Nome: manter “Distrito Industrial” como subtítulo oficial?
+- [x] Posicionamento: grade com snap de 1 unidade. Colisão e rotas ficam simples.
+- [x] Câmera: fixa na v0.1. Rotação e zoom entram na v0.8.
+- [x] Stack: Three.js 0.186.1 com módulos ES, sem bundler.
+- [x] Ferramentas: JavaScript puro. TypeScript e bundler só se o código pedir.
+- [x] Trânsito: decorativo até a v0.7, quando entram os veículos de entrega.
+- [x] Nome: “Distrito Industrial” como subtítulo oficial.
+
+## Estado de implementação
+
+- v0.1: em andamento. Entrega: movimentação na grade, posicionamento de máquina e produção manual de uma caixa.
 
 ## Riscos
 

@@ -6,7 +6,13 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
-Base inicial: cena 3D com chão de concreto, luz natural e a oficina como placeholder. Ainda não há jogabilidade.
+v0.1 (em andamento): o jogador anda na grade, posiciona uma máquina e produz caixas à mão.
+
+| Tecla | Ação |
+|---|---|
+| WASD ou setas | Andar |
+| B | Posicionar máquina na célula do jogador |
+| E | Produzir uma caixa na máquina próxima |
 
 ## Como rodar
 
