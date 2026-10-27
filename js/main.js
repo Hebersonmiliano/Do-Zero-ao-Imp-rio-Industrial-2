@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { registrarObstaculo, cabeAqui } from './grade.js';
 import { criarJogador, atualizarJogador } from './jogador.js';
 import { criarMaquina, criarCaixa, maquinaProxima } from './producao.js';
+import { ciclar, produtoAtual } from './catalogo.js';
+import { guardarNoEstoque, totalNoEstoque, resumoEstoque } from './estoque.js';
 
 const COR = {
   petroleo: 0x1f4e5a,
@@ -15,6 +17,9 @@ const palco = document.getElementById('palco');
 const elCaixas = document.getElementById('caixas');
 const elMaquinas = document.getElementById('maquinas');
 const elMensagem = document.getElementById('mensagem');
+const elProduto = document.getElementById('produto');
+const elEstoque = document.getElementById('estoque');
+const elDetalheEstoque = document.getElementById('detalhe-estoque');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -91,6 +96,9 @@ function mensagem(texto) {
 function atualizarPlacar() {
   elCaixas.textContent = caixas;
   elMaquinas.textContent = maquinas.length;
+  elProduto.textContent = produtoAtual().nome;
+  elEstoque.textContent = totalNoEstoque();
+  elDetalheEstoque.textContent = resumoEstoque();
 }
 
 // Coloca uma máquina na célula à frente do jogador (1,5 célula), se a célula estiver livre.
@@ -111,24 +119,59 @@ function posicionarMaquina() {
   mensagem('Máquina posicionada.');
 }
 
-// Produz uma caixa na máquina mais próxima do jogador.
+// Produz uma caixa do produto escolhido na máquina mais próxima do jogador.
 function produzirCaixa() {
   const maquina = maquinaProxima(jogador.position, maquinas);
   if (!maquina) {
     mensagem('Chegue perto de uma máquina para produzir.');
     return;
   }
-  cena.add(criarCaixa(maquina));
+  cena.add(criarCaixa(maquina, produtoAtual()));
   caixas += 1;
   atualizarPlacar();
   mensagem('Caixa produzida.');
 }
 
+// Leva a saída da máquina mais próxima para o estoque, separado da produção.
+function recolherSaida() {
+  const maquina = maquinaProxima(jogador.position, maquinas);
+  if (!maquina) {
+    mensagem('Chegue perto de uma máquina para recolher.');
+    return;
+  }
+  if (maquina.saida.length === 0) {
+    mensagem('A saída desta máquina está vazia.');
+    return;
+  }
+  const levadas = maquina.saida.splice(0);
+  for (const { malha, produto } of levadas) {
+    cena.remove(malha);
+    guardarNoEstoque(produto);
+  }
+  atualizarPlacar();
+  mensagem(`${levadas.length} caixa(s) levada(s) ao estoque.`);
+}
+
+// Troca um campo do catálogo (tamanho, cor ou material) e mostra a nova escolha.
+function trocarCatalogo(campo, rotulo) {
+  ciclar(campo);
+  atualizarPlacar();
+  mensagem(`${rotulo}: ${produtoAtual().nome}`);
+}
+
+const teclasDeAcao = {
+  KeyB: posicionarMaquina,
+  KeyE: produzirCaixa,
+  KeyR: recolherSaida,
+  KeyT: () => trocarCatalogo('tamanho', 'Tamanho'),
+  KeyC: () => trocarCatalogo('cor', 'Cor'),
+  KeyM: () => trocarCatalogo('material', 'Material'),
+};
+
 window.addEventListener('keydown', (e) => {
   teclas.add(e.code);
   if (e.repeat) return;
-  if (e.code === 'KeyB') posicionarMaquina();
-  if (e.code === 'KeyE') produzirCaixa();
+  teclasDeAcao[e.code]?.();
 });
 window.addEventListener('keyup', (e) => teclas.delete(e.code));
 window.addEventListener('blur', () => teclas.clear());

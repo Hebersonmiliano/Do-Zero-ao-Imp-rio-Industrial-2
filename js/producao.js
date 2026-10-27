@@ -1,4 +1,4 @@
-// Máquinas e caixas produzidas. Na v0.1 a produção é manual: o jogador usa a máquina para fabricar uma caixa.
+// Máquinas e saída de caixas. A produção é manual: o jogador usa a máquina para fabricar uma caixa do produto escolhido.
 import * as THREE from 'three';
 
 const ALCANCE = 1.8; // distância máxima do jogador para usar uma máquina
@@ -11,15 +11,15 @@ export function criarMaquina(x, z) {
   malha.position.set(x, 0.5, z);
   malha.castShadow = true;
   malha.receiveShadow = true;
-  return { x, z, malha, caixas: [] };
+  return { x, z, malha, saida: [] }; // saída: caixas prontas, ainda não levadas ao estoque
 }
 
-// Cria a malha de uma caixa nova sobre a máquina, empilhando em camadas de 4.
-export function criarCaixa(maquina) {
-  const n = maquina.caixas.length;
+// Cria a malha de uma caixa do produto sobre a saída da máquina, empilhando em camadas de 4.
+export function criarCaixa(maquina, produto) {
+  const n = maquina.saida.length;
   const malha = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.3, 0.4),
-    new THREE.MeshStandardMaterial({ color: 0xc89b5a }),
+    new THREE.BoxGeometry(0.4 * produto.escala, 0.3 * produto.altura, 0.4 * produto.escala),
+    new THREE.MeshStandardMaterial({ color: produto.cor }),
   );
   malha.position.set(
     maquina.x + ((n % 2) - 0.5) * 0.45,
@@ -27,7 +27,7 @@ export function criarCaixa(maquina) {
     maquina.z + (((n >> 1) % 2) - 0.5) * 0.45,
   );
   malha.castShadow = true;
-  maquina.caixas.push(malha);
+  maquina.saida.push({ malha, produto });
   return malha;
 }
 
