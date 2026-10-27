@@ -4,7 +4,17 @@ import { registrarObstaculo, cabeAqui } from './grade.js';
 import { criarJogador, atualizarJogador } from './jogador.js';
 import { criarMaquina, criarCaixa, maquinaProxima } from './producao.js';
 import { ciclar, produtoAtual } from './catalogo.js';
-import { guardarNoEstoque, totalNoEstoque, resumoEstoque } from './estoque.js';
+import { guardarNoEstoque, totalNoEstoque, resumoEstoque, venderTudo } from './estoque.js';
+import {
+  CUSTO_MAQUINA,
+  CUSTO_PRODUCAO,
+  META_VENDAS,
+  getDinheiro,
+  getVendido,
+  pagar,
+  receber,
+  venceu,
+} from './economia.js';
 
 const COR = {
   petroleo: 0x1f4e5a,
@@ -20,6 +30,8 @@ const elMensagem = document.getElementById('mensagem');
 const elProduto = document.getElementById('produto');
 const elEstoque = document.getElementById('estoque');
 const elDetalheEstoque = document.getElementById('detalhe-estoque');
+const elDinheiro = document.getElementById('dinheiro');
+const elMeta = document.getElementById('meta');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -78,6 +90,18 @@ placa.position.set(0, 3.5, 2.1);
 placa.castShadow = true;
 cena.add(placa);
 
+// Expedição: onde o estoque é vendido (tecla V, perto do ponto).
+const EXPEDICAO = { x: -8, z: 4 };
+const expedicao = new THREE.Mesh(
+  new THREE.BoxGeometry(2, 1, 2),
+  new THREE.MeshStandardMaterial({ color: COR.laranja }),
+);
+expedicao.position.set(EXPEDICAO.x, 0.5, EXPEDICAO.z);
+expedicao.castShadow = true;
+expedicao.receiveShadow = true;
+cena.add(expedicao);
+registrarObstaculo(EXPEDICAO.x - 1, EXPEDICAO.x + 1, EXPEDICAO.z - 1, EXPEDICAO.z + 1);
+
 const jogador = criarJogador(0, 4);
 cena.add(jogador);
 
@@ -99,6 +123,8 @@ function atualizarPlacar() {
   elProduto.textContent = produtoAtual().nome;
   elEstoque.textContent = totalNoEstoque();
   elDetalheEstoque.textContent = resumoEstoque();
+  elDinheiro.textContent = getDinheiro();
+  elMeta.textContent = `${getVendido()} de ${META_VENDAS}`;
 }
 
 // Coloca uma máquina na célula à frente do jogador (1,5 célula), se a célula estiver livre.
@@ -109,6 +135,10 @@ function posicionarMaquina() {
   const cz = Math.round(p.z + f.z * 1.5);
   if (!cabeAqui(cx, cz)) {
     mensagem('Sem espaço aqui.');
+    return;
+  }
+  if (!pagar(CUSTO_MAQUINA)) {
+    mensagem(`Máquina custa R$ ${CUSTO_MAQUINA}. Você tem R$ ${getDinheiro()}.`);
     return;
   }
   const maquina = criarMaquina(cx, cz);
@@ -124,6 +154,10 @@ function produzirCaixa() {
   const maquina = maquinaProxima(jogador.position, maquinas);
   if (!maquina) {
     mensagem('Chegue perto de uma máquina para produzir.');
+    return;
+  }
+  if (!pagar(CUSTO_PRODUCAO)) {
+    mensagem(`Sem dinheiro para papelão (R$ ${CUSTO_PRODUCAO}).`);
     return;
   }
   cena.add(criarCaixa(maquina, produtoAtual()));
@@ -152,6 +186,28 @@ function recolherSaida() {
   mensagem(`${levadas.length} caixa(s) levada(s) ao estoque.`);
 }
 
+// Vende todo o estoque na expedição, perto do ponto de venda.
+function venderNaExpedicao() {
+  const p = jogador.position;
+  if (Math.hypot(p.x - EXPEDICAO.x, p.z - EXPEDICAO.z) > 2.2) {
+    mensagem('Leve o estoque à expedição (laranja) para vender.');
+    return;
+  }
+  const valor = venderTudo();
+  if (valor === 0) {
+    mensagem('Nada no estoque para vender.');
+    return;
+  }
+  const ja = venceu();
+  receber(valor);
+  atualizarPlacar();
+  mensagem(
+    !ja && venceu()
+      ? `Vendido por R$ ${valor}. Meta de R$ ${META_VENDAS} atingida: campanha vencida!`
+      : `Vendido por R$ ${valor}.`,
+  );
+}
+
 // Troca um campo do catálogo (tamanho, cor ou material) e mostra a nova escolha.
 function trocarCatalogo(campo, rotulo) {
   ciclar(campo);
@@ -163,6 +219,7 @@ const teclasDeAcao = {
   KeyB: posicionarMaquina,
   KeyE: produzirCaixa,
   KeyR: recolherSaida,
+  KeyV: venderNaExpedicao,
   KeyT: () => trocarCatalogo('tamanho', 'Tamanho'),
   KeyC: () => trocarCatalogo('cor', 'Cor'),
   KeyM: () => trocarCatalogo('material', 'Material'),

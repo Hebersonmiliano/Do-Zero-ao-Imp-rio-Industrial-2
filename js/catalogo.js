@@ -1,9 +1,9 @@
 // Catálogo de caixas: tamanho, cor e material. A escolha atual define o que a máquina produz.
 
 export const TAMANHOS = [
-  { id: 'P', nome: 'Pequena', escala: 0.75 },
-  { id: 'M', nome: 'Média', escala: 1 },
-  { id: 'G', nome: 'Grande', escala: 1.3 },
+  { id: 'P', nome: 'Pequena', escala: 0.75, valor: 6 },
+  { id: 'M', nome: 'Média', escala: 1, valor: 10 },
+  { id: 'G', nome: 'Grande', escala: 1.3, valor: 16 },
 ];
 
 export const CORES = [
@@ -13,8 +13,8 @@ export const CORES = [
 ];
 
 export const MATERIAIS = [
-  { nome: 'Papelão simples', altura: 1 },
-  { nome: 'Reforçado', altura: 1.4 },
+  { nome: 'Papelão simples', altura: 1, multiplicador: 1 },
+  { nome: 'Reforçado', altura: 1.4, multiplicador: 2 },
 ];
 
 const escolha = { tamanho: 0, cor: 0, material: 0 };
@@ -36,5 +36,6 @@ export function produtoAtual() {
     escala: t.escala,
     altura: m.altura,
     cor: c.hex,
+    valor: t.valor * m.multiplicador, // preço de venda na expedição, em R$
   };
 }

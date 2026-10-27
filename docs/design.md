@@ -145,6 +145,7 @@ Decididas em 2026-10-27, antes da v0.1:
 
 - v0.1: concluída. Movimentação na grade, posicionamento de máquina e produção manual de uma caixa.
 - v0.2: concluída. Catálogo com tamanho, cor e material (teclas T, C e M) e estoque separado da saída das máquinas (tecla R).
+- Primeira versão jogável: economia com dinheiro inicial de R$ 100, custo de papelão (R$ 2 por caixa), máquina de R$ 60, expedição para vender (tecla V) e meta de R$ 1.000 em vendas. Ainda sem funcionários, automação, clientes, contratos ou save.
 
 ## Riscos
 
