@@ -6,6 +6,7 @@ import { criarMaquina, criarCaixa, criarEsteira, maquinaProxima } from './produc
 import { ciclar, produtoAtual } from './catalogo.js';
 import { guardarNoEstoque, totalNoEstoque, resumoEstoque, venderTudo, retirarPedido } from './estoque.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
+import { criarCenario } from './cenario.js';
 import {
   CUSTO_ESTEIRA,
   CUSTO_FUNCIONARIO,
@@ -72,6 +73,7 @@ const chao = new THREE.Mesh(
 chao.rotation.x = -Math.PI / 2;
 chao.receiveShadow = true;
 cena.add(chao);
+criarCenario(cena);
 
 const grade = new THREE.GridHelper(24, 24, COR.petroleo, COR.petroleo);
 grade.material.transparent = true;
