@@ -93,13 +93,13 @@ function atualizarPlacar() {
   elMaquinas.textContent = maquinas.length;
 }
 
-// Coloca uma máquina na célula mais próxima do jogador, se a célula estiver livre.
+// Coloca uma máquina na célula à frente do jogador (1,5 célula), se a célula estiver livre.
 function posicionarMaquina() {
   const p = jogador.position;
-  const cx = Math.round(p.x);
-  const cz = Math.round(p.z);
-  const ocupadaPeloJogador = Math.abs(p.x - cx) < 0.75 && Math.abs(p.z - cz) < 0.75;
-  if (!cabeAqui(cx, cz) || ocupadaPeloJogador) {
+  const f = jogador.userData.frente;
+  const cx = Math.round(p.x + f.x * 1.5);
+  const cz = Math.round(p.z + f.z * 1.5);
+  if (!cabeAqui(cx, cz)) {
     mensagem('Sem espaço aqui.');
     return;
   }

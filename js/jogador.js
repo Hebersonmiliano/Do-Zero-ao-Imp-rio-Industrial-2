@@ -11,6 +11,8 @@ export function criarJogador(x, z) {
   );
   malha.position.set(x, 0.7, z);
   malha.castShadow = true;
+  // Direção para onde o jogador olha (eixo dominante), usada para posicionar máquinas à frente.
+  malha.userData.frente = { x: 0, z: 1 };
   return malha;
 }
 
@@ -22,6 +24,10 @@ export function atualizarJogador(jogador, teclas, dt) {
   if (teclas.has('KeyW') || teclas.has('ArrowUp')) dz -= 1;
   if (teclas.has('KeyS') || teclas.has('ArrowDown')) dz += 1;
   if (dx === 0 && dz === 0) return;
+
+  jogador.userData.frente = Math.abs(dx) >= Math.abs(dz)
+    ? { x: Math.sign(dx), z: 0 }
+    : { x: 0, z: Math.sign(dz) };
 
   // Normaliza a diagonal para não andar mais rápido.
   const tamanho = Math.hypot(dx, dz);
