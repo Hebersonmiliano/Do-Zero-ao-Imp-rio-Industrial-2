@@ -9,6 +9,24 @@ export const META_VENDAS = 1000; // R$ em vendas para vencer a campanha
 
 let dinheiro = DINHEIRO_INICIAL;
 let vendido = 0;
+let pedido = { quantidade: 5, bonus: 30 }; // próximo pedido de cliente: caixas pedidas e bônus em R$
+let pedidosCumpridos = 0;
+
+export function getPedido() {
+  return pedido;
+}
+
+export function getPedidosCumpridos() {
+  return pedidosCumpridos;
+}
+
+// Registra o pedido cumprido: devolve o bônus e prepara um pedido maior.
+export function cumprirPedido() {
+  const bonus = pedido.bonus;
+  pedidosCumpridos += 1;
+  pedido = { quantidade: pedido.quantidade + 3, bonus: pedido.bonus + 20 };
+  return bonus;
+}
 
 export function getDinheiro() {
   return dinheiro;

@@ -26,3 +26,20 @@ export function venderTudo() {
   itens.clear();
   return valor;
 }
+
+// Retira uma quantidade de caixas, começando pelas mais caras. Devolve o valor retirado, ou 0 se faltar estoque.
+export function retirarPedido(quantidade) {
+  if (totalNoEstoque() < quantidade) return 0;
+  const ordenados = [...itens.entries()].sort((a, b) => b[1].valor - a[1].valor);
+  let restante = quantidade;
+  let valor = 0;
+  for (const [chave, item] of ordenados) {
+    const tirar = Math.min(restante, item.quantidade);
+    item.quantidade -= tirar;
+    valor += tirar * item.valor;
+    restante -= tirar;
+    if (item.quantidade === 0) itens.delete(chave);
+    if (restante === 0) break;
+  }
+  return valor;
+}

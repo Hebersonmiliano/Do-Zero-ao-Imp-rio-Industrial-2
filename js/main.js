@@ -4,7 +4,7 @@ import { registrarObstaculo, cabeAqui } from './grade.js';
 import { criarJogador, atualizarJogador } from './jogador.js';
 import { criarMaquina, criarCaixa, criarEsteira, maquinaProxima } from './producao.js';
 import { ciclar, produtoAtual } from './catalogo.js';
-import { guardarNoEstoque, totalNoEstoque, resumoEstoque, venderTudo } from './estoque.js';
+import { guardarNoEstoque, totalNoEstoque, resumoEstoque, venderTudo, retirarPedido } from './estoque.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
 import {
   CUSTO_ESTEIRA,
@@ -12,7 +12,10 @@ import {
   CUSTO_MAQUINA,
   CUSTO_PRODUCAO,
   META_VENDAS,
+  cumprirPedido,
   getDinheiro,
+  getPedido,
+  getPedidosCumpridos,
   getVendido,
   pagar,
   receber,
@@ -36,6 +39,8 @@ const elDetalheEstoque = document.getElementById('detalhe-estoque');
 const elDinheiro = document.getElementById('dinheiro');
 const elMeta = document.getElementById('meta');
 const elFuncionarios = document.getElementById('funcionarios');
+const elPedido = document.getElementById('pedido');
+const elPedidosCumpridos = document.getElementById('pedidos-cumpridos');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -143,6 +148,9 @@ function atualizarPlacar() {
   elDinheiro.textContent = getDinheiro();
   elMeta.textContent = `${getVendido()} de ${META_VENDAS}`;
   elFuncionarios.textContent = funcionarios.length;
+  const pedido = getPedido();
+  elPedido.textContent = `${pedido.quantidade} caixas (bônus R$ ${pedido.bonus})`;
+  elPedidosCumpridos.textContent = getPedidosCumpridos();
 }
 
 // Ações que os funcionários usam na cena: produzir, recolher a saída e depositar no estoque.
@@ -281,11 +289,30 @@ function recolherSaida() {
   mensagem(`${levadas.length} caixa(s) levada(s) ao estoque.`);
 }
 
-// Vende todo o estoque na expedição, perto do ponto de venda.
+// Recebe um valor na expedição e avisa se a campanha acabou de ser vencida.
+function registrarVenda(valor, texto) {
+  const jaVencida = venceu();
+  receber(valor);
+  atualizarPlacar();
+  mensagem(
+    !jaVencida && venceu()
+      ? `${texto} Meta de R$ ${META_VENDAS} atingida: campanha vencida!`
+      : texto,
+  );
+}
+
+// Na expedição: cumpre o pedido do cliente se houver caixas suficientes, senão vende todo o estoque.
 function venderNaExpedicao() {
   const p = jogador.position;
   if (Math.hypot(p.x - EXPEDICAO.x, p.z - EXPEDICAO.z) > 2.2) {
     mensagem('Leve o estoque à expedição (laranja) para vender.');
+    return;
+  }
+  const pedido = getPedido();
+  const valorPedido = retirarPedido(pedido.quantidade);
+  if (valorPedido > 0) {
+    const bonus = cumprirPedido();
+    registrarVenda(valorPedido + bonus, `Pedido cumprido: R$ ${valorPedido} + bônus de R$ ${bonus}.`);
     return;
   }
   const valor = venderTudo();
@@ -293,14 +320,7 @@ function venderNaExpedicao() {
     mensagem('Nada no estoque para vender.');
     return;
   }
-  const ja = venceu();
-  receber(valor);
-  atualizarPlacar();
-  mensagem(
-    !ja && venceu()
-      ? `Vendido por R$ ${valor}. Meta de R$ ${META_VENDAS} atingida: campanha vencida!`
-      : `Vendido por R$ ${valor}.`,
-  );
+  registrarVenda(valor, `Vendido por R$ ${valor}.`);
 }
 
 // Troca um campo do catálogo (tamanho, cor ou material) e mostra a nova escolha.
