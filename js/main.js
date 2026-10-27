@@ -2,11 +2,12 @@
 import * as THREE from 'three';
 import { registrarObstaculo, cabeAqui } from './grade.js';
 import { criarJogador, atualizarJogador } from './jogador.js';
-import { criarMaquina, criarCaixa, maquinaProxima } from './producao.js';
+import { criarMaquina, criarCaixa, criarEsteira, maquinaProxima } from './producao.js';
 import { ciclar, produtoAtual } from './catalogo.js';
 import { guardarNoEstoque, totalNoEstoque, resumoEstoque, venderTudo } from './estoque.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
 import {
+  CUSTO_ESTEIRA,
   CUSTO_FUNCIONARIO,
   CUSTO_MAQUINA,
   CUSTO_PRODUCAO,
@@ -164,6 +165,46 @@ const acoesFuncionario = {
   },
 };
 
+// Liga a esteira da máquina mais próxima: a saída passa a ir sozinha ao estoque.
+function ligarEsteira() {
+  const maquina = maquinaProxima(jogador.position, maquinas);
+  if (!maquina) {
+    mensagem('Chegue perto de uma máquina para ligar a esteira.');
+    return;
+  }
+  if (maquina.esteira) {
+    mensagem('Esta máquina já tem esteira.');
+    return;
+  }
+  if (!pagar(CUSTO_ESTEIRA)) {
+    mensagem(`Esteira custa R$ ${CUSTO_ESTEIRA}. Você tem R$ ${getDinheiro()}.`);
+    return;
+  }
+  maquina.esteira = criarEsteira(maquina, ESTOQUE_PONTO);
+  cena.add(maquina.esteira);
+  atualizarPlacar();
+  mensagem('Esteira ligada ao estoque.');
+}
+
+// Esteiras levam a saída de cada máquina ao estoque a cada 2 segundos, sem ação do jogador.
+function atualizarEsteiras(dt) {
+  for (const m of maquinas) {
+    if (!m.esteira || m.saida.length === 0) {
+      m.cronometro = 0;
+      continue;
+    }
+    m.cronometro += dt;
+    if (m.cronometro < 2) continue;
+    m.cronometro = 0;
+    const levadas = m.saida.splice(0);
+    for (const { malha, produto } of levadas) {
+      cena.remove(malha);
+      guardarNoEstoque(produto);
+    }
+    atualizarPlacar();
+  }
+}
+
 // Contrata um funcionário que aparece perto da oficina e trabalha sozinho.
 function contratarFuncionario() {
   if (funcionarios.length >= LIMITE_FUNCIONARIOS) {
@@ -275,6 +316,7 @@ const teclasDeAcao = {
   KeyR: recolherSaida,
   KeyV: venderNaExpedicao,
   KeyF: contratarFuncionario,
+  KeyL: ligarEsteira,
   KeyT: () => trocarCatalogo('tamanho', 'Tamanho'),
   KeyC: () => trocarCatalogo('cor', 'Cor'),
   KeyM: () => trocarCatalogo('material', 'Material'),
@@ -300,6 +342,7 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(relogio.getDelta(), 0.05);
   atualizarJogador(jogador, teclas, dt);
   for (const f of funcionarios) atualizarFuncionario(f, dt, maquinas, acoesFuncionario);
+  atualizarEsteiras(dt);
   renderer.render(cena, camera);
 });
 

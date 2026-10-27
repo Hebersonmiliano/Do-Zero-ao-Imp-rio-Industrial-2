@@ -4,6 +4,7 @@ export const DINHEIRO_INICIAL = 100; // R$
 export const CUSTO_PRODUCAO = 2; // R$ de papelão por caixa produzida
 export const CUSTO_MAQUINA = 60; // R$ por máquina posicionada
 export const CUSTO_FUNCIONARIO = 80; // R$ para contratar um funcionário
+export const CUSTO_ESTEIRA = 40; // R$ para ligar a saída de uma máquina ao estoque
 export const META_VENDAS = 1000; // R$ em vendas para vencer a campanha
 
 let dinheiro = DINHEIRO_INICIAL;

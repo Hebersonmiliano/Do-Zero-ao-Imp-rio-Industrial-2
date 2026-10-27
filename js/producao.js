@@ -11,7 +11,23 @@ export function criarMaquina(x, z) {
   malha.position.set(x, 0.5, z);
   malha.castShadow = true;
   malha.receiveShadow = true;
-  return { x, z, malha, saida: [] }; // saída: caixas prontas, ainda não levadas ao estoque
+  // saída: caixas prontas, ainda não levadas ao estoque; esteira: transporte automático até o estoque
+  return { x, z, malha, saida: [], esteira: null, cronometro: 0 };
+}
+
+// Desenha uma esteira reta da máquina até o destino. Devolve a malha para a cena.
+export function criarEsteira(maquina, destino) {
+  const dx = destino.x - maquina.x;
+  const dz = destino.z - maquina.z;
+  const comprimento = Math.hypot(dx, dz);
+  const malha = new THREE.Mesh(
+    new THREE.BoxGeometry(comprimento, 0.08, 0.5),
+    new THREE.MeshStandardMaterial({ color: 0x555f66 }),
+  );
+  malha.position.set((maquina.x + destino.x) / 2, 0.04, (maquina.z + destino.z) / 2);
+  malha.rotation.y = -Math.atan2(dz, dx);
+  malha.receiveShadow = true;
+  return malha;
 }
 
 // Cria a malha de uma caixa do produto sobre a saída da máquina, empilhando em camadas de 4.
