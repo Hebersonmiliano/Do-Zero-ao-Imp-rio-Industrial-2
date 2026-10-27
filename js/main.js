@@ -5,7 +5,9 @@ import { criarJogador, atualizarJogador } from './jogador.js';
 import { criarMaquina, criarCaixa, maquinaProxima } from './producao.js';
 import { ciclar, produtoAtual } from './catalogo.js';
 import { guardarNoEstoque, totalNoEstoque, resumoEstoque, venderTudo } from './estoque.js';
+import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
 import {
+  CUSTO_FUNCIONARIO,
   CUSTO_MAQUINA,
   CUSTO_PRODUCAO,
   META_VENDAS,
@@ -32,6 +34,7 @@ const elEstoque = document.getElementById('estoque');
 const elDetalheEstoque = document.getElementById('detalhe-estoque');
 const elDinheiro = document.getElementById('dinheiro');
 const elMeta = document.getElementById('meta');
+const elFuncionarios = document.getElementById('funcionarios');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -102,10 +105,23 @@ expedicao.receiveShadow = true;
 cena.add(expedicao);
 registrarObstaculo(EXPEDICAO.x - 1, EXPEDICAO.x + 1, EXPEDICAO.z - 1, EXPEDICAO.z + 1);
 
+// Prateleira do estoque: onde os funcionários depositam a saída das máquinas.
+const prateleira = new THREE.Mesh(
+  new THREE.BoxGeometry(2, 1.2, 1),
+  new THREE.MeshStandardMaterial({ color: COR.petroleo }),
+);
+prateleira.position.set(ESTOQUE_PONTO.x, 0.6, ESTOQUE_PONTO.z);
+prateleira.castShadow = true;
+prateleira.receiveShadow = true;
+cena.add(prateleira);
+registrarObstaculo(ESTOQUE_PONTO.x - 1, ESTOQUE_PONTO.x + 1, ESTOQUE_PONTO.z - 0.5, ESTOQUE_PONTO.z + 0.5);
+
 const jogador = criarJogador(0, 4);
 cena.add(jogador);
 
 const maquinas = [];
+const funcionarios = [];
+const LIMITE_FUNCIONARIOS = 3;
 let caixas = 0;
 
 const teclas = new Set();
@@ -125,6 +141,44 @@ function atualizarPlacar() {
   elDetalheEstoque.textContent = resumoEstoque();
   elDinheiro.textContent = getDinheiro();
   elMeta.textContent = `${getVendido()} de ${META_VENDAS}`;
+  elFuncionarios.textContent = funcionarios.length;
+}
+
+// Ações que os funcionários usam na cena: produzir, recolher a saída e depositar no estoque.
+const acoesFuncionario = {
+  podeProduzir: () => getDinheiro() >= CUSTO_PRODUCAO,
+  produzir(maquina) {
+    if (!pagar(CUSTO_PRODUCAO)) return;
+    cena.add(criarCaixa(maquina, produtoAtual()));
+    caixas += 1;
+    atualizarPlacar();
+  },
+  recolher(maquina) {
+    const levadas = maquina.saida.splice(0);
+    for (const { malha } of levadas) cena.remove(malha);
+    return levadas.map((item) => item.produto);
+  },
+  depositar(produtos) {
+    for (const produto of produtos) guardarNoEstoque(produto);
+    atualizarPlacar();
+  },
+};
+
+// Contrata um funcionário que aparece perto da oficina e trabalha sozinho.
+function contratarFuncionario() {
+  if (funcionarios.length >= LIMITE_FUNCIONARIOS) {
+    mensagem(`Limite de ${LIMITE_FUNCIONARIOS} funcionários.`);
+    return;
+  }
+  if (!pagar(CUSTO_FUNCIONARIO)) {
+    mensagem(`Funcionário custa R$ ${CUSTO_FUNCIONARIO}. Você tem R$ ${getDinheiro()}.`);
+    return;
+  }
+  const f = criarFuncionario(-3 + funcionarios.length, 3.5);
+  cena.add(f.malha);
+  funcionarios.push(f);
+  atualizarPlacar();
+  mensagem('Funcionário contratado.');
 }
 
 // Coloca uma máquina na célula à frente do jogador (1,5 célula), se a célula estiver livre.
@@ -220,6 +274,7 @@ const teclasDeAcao = {
   KeyE: produzirCaixa,
   KeyR: recolherSaida,
   KeyV: venderNaExpedicao,
+  KeyF: contratarFuncionario,
   KeyT: () => trocarCatalogo('tamanho', 'Tamanho'),
   KeyC: () => trocarCatalogo('cor', 'Cor'),
   KeyM: () => trocarCatalogo('material', 'Material'),
@@ -244,6 +299,7 @@ const relogio = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   const dt = Math.min(relogio.getDelta(), 0.05);
   atualizarJogador(jogador, teclas, dt);
+  for (const f of funcionarios) atualizarFuncionario(f, dt, maquinas, acoesFuncionario);
   renderer.render(cena, camera);
 });
 
