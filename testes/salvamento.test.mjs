@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { CHAVE_SAVE, VERSAO_SAVE, apagar, carregar, gravar, lerSave, montarSave } from '../js/salvamento.js';
 import { ciclar, exportarEscolha, importarEscolha, produtoAtual, produtoPorChave } from '../js/catalogo.js';
 import { exportarEstoque, guardarNoEstoque, importarEstoque, totalNoEstoque } from '../js/estoque.js';
-import { exportarEconomia, getDinheiro, getPedido, importarEconomia, pagar, receber } from '../js/economia.js';
+import { exportarEconomia, getDinheiro, getVendido, importarEconomia, pagar, receber } from '../js/economia.js';
 
 // Armazenamento falso no lugar do localStorage.
 function memoria() {
@@ -51,7 +51,7 @@ teste('economia, estoque e escolha voltam iguais', () => {
   assert.equal(getDinheiro(), 125);
   assert.equal(totalNoEstoque(), 4);
   assert.equal(produtoAtual().chave, 'M-0-1');
-  assert.deepEqual(getPedido(), { quantidade: 5, bonus: 30 });
+  assert.equal(getVendido(), 55);
 });
 
 teste('máquinas, funcionários e jogador vão e voltam pelo save', () => {
@@ -97,9 +97,19 @@ teste('dados estragados são corrigidos ao ler', () => {
   assert.equal(lido.maquinas[0].saida.length, 8, 'saída respeita a capacidade');
   assert.equal(lido.funcionarios.length, 3, 'respeita o limite de funcionários');
   assert.equal(lido.estoque.length, 1);
-  importarEconomia({ dinheiro: -50, pedido: { quantidade: 0 } });
+  importarEconomia({ dinheiro: -50 });
   assert.equal(getDinheiro(), 100);
-  assert.equal(getPedido().quantidade, 1);
+});
+
+teste('save da versão 1 é migrado para a 2 (contratos)', () => {
+  const v1 = {
+    versao: 1, caixas: 9, jogador: { x: 0, z: 4 }, maquinas: [], funcionarios: [], estoque: [], escolha: {},
+    economia: { dinheiro: 140, vendido: 300, pedido: { quantidade: 11, bonus: 70 }, pedidosCumpridos: 2 },
+  };
+  const lido = lerSave(JSON.stringify(v1));
+  assert.equal(lido.versao, 2);
+  assert.deepEqual(lido.economia, { dinheiro: 140, vendido: 300 });
+  assert.deepEqual(lido.contratos, { reputacao: 30, cumpridos: 2 });
 });
 
 teste('gravar, carregar e apagar no armazenamento', () => {

@@ -150,10 +150,11 @@ Decididas em 2026-10-27, antes da v0.1:
 | Primeira versão jogável | Concluída | Economia com R$ 100 iniciais, expedição para vender (tecla V), pedidos de cliente com bônus e meta de R$ 1.000 em vendas. |
 | v0.3 | Concluída | Até 3 funcionários (tecla F) escolhem tarefas sozinhos: produzem nas máquinas manuais e levam a saída ao estoque. |
 | v0.4 | Concluída | Esteiras (tecla L) e máquinas automáticas (tecla U). A linha roda sem o jogador e os gargalos aparecem na luz das máquinas. |
+| v0.5 | Concluída | Seis tipos de clientes oferecem contratos com produto exato, quantidade, pagamento e prazo. Reputação de 0 a 100 libera clientes e aumenta pagamentos. Substitui o pedido genérico da primeira versão jogável. |
 | Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
-Ainda não existem: câmera com rotação e zoom, clientes no cenário, contratos com prazo, reputação e qualidade.
+Ainda não existem: câmera com rotação e zoom, clientes andando no cenário, negociação de prazo e preço, qualidade e manutenção.
 
 ### v0.4 em detalhe
 
@@ -169,13 +170,34 @@ Ainda não existem: câmera com rotação e zoom, clientes no cenário, contrato
 - A esteira vai em linha reta da máquina até a prateleira e pode atravessar a oficina. Rotas com curvas entram junto com a construção de esteiras por peças.
 - O tempo da simulação ainda segue o quadro de renderização, com passo máximo de 0,05 segundo. Em aparelhos muito lentos o jogo inteiro fica mais lento. A arquitetura pede tempo de simulação separado.
 
+### v0.5 em detalhe
+
+- **Ofertas:** a primeira chega logo no começo; depois, uma a cada 30 segundos de jogo, ou a cada 10 segundos se o quadro estiver vazio. Ficam até 3 no quadro, e cada uma some depois de 60 segundos sem aceite, sem penalidade.
+- **Contrato:** pede um produto exato do catálogo (tamanho, cor e material), uma quantidade e um prazo. O pagamento por caixa é o preço da venda avulsa × a margem do cliente × (1 + reputação ÷ 200). Até 3 contratos ao mesmo tempo (teclas 1, 2 e 3 aceitam).
+- **Entrega:** V na expedição entrega todos os contratos que o estoque já cobre, do prazo mais curto ao mais longo. Sem contrato pronto, V vende o estoque livre; produtos pedidos por contratos em andamento ficam guardados.
+- **Prazo vencido:** multa de 25% do pagamento (sem deixar o dinheiro negativo) e −10 de reputação.
+- **Reputação:** começa em 20 e vai de 0 a 100; +5 por entrega no prazo. Faixas: Bairro (0), Distrito (30), Regional (60) e Referência (85).
+- **Critério de pronto atendido:** contrato aceito, entregue e a reputação muda. Verificado em `testes/contratos.test.mjs` e jogando no navegador.
+
+| Cliente | Reputação mínima | Produtos | Quantidade | Prazo | Margem |
+| --- | --- | --- | --- | --- | --- |
+| Mercadinho Aurora | 0 | P ou M, parda, simples | 4 a 8 | 1:30 | 1,3 |
+| Loja Bom Presente | 0 | P ou M, azul ou vermelha, simples | 3 a 6 | 1:40 | 1,5 |
+| Confeitaria Doce Grão | 15 | P, vermelha, simples ou reforçada | 6 a 10 | 1:30 | 1,6 |
+| Transportadora Rota Sul | 30 | G, parda, reforçada | 6 a 12 | 2:30 | 1,5 |
+| Loja Virtual Clique | 50 | M ou G, qualquer cor, reforçada | 10 a 16 | 2:40 | 1,7 |
+| Rede Varejo Centro | 70 | M ou G, parda ou azul, simples ou reforçada | 18 a 30 | 4:00 | 1,9 |
+
+Com contratos, o catálogo passa a importar: a máquina automática precisa ser reprogramada (U) para o produto que o cliente pediu.
+
 ### Salvamento em detalhe
 
 - **Onde:** `localStorage` do navegador, na chave `imperio-industrial-2:save`. Cada navegador tem o seu save.
 - **Quando:** a cada 5 segundos, ao fechar a página e ao trocar de aba.
-- **O que:** economia (dinheiro, vendido, pedido atual e pedidos cumpridos), estoque por produto, escolha do catálogo, total de caixas produzidas, máquinas (posição, saída, esteira, automação e produto programado), posição dos funcionários e do jogador.
+- **O que:** economia (dinheiro e vendido), quadro de contratos (reputação, ofertas, contratos com o tempo restante, cumpridos e vencidos), estoque por produto, escolha do catálogo, total de caixas produzidas, máquinas (posição, saída, esteira, automação e produto programado), posição dos funcionários e do jogador.
 - **Produtos:** gravados só pela chave (por exemplo `M-1-0`) e reconstruídos pelo catálogo ao carregar. Se um preço mudar no catálogo, o save antigo usa o preço novo.
-- **Versão:** o save tem o campo `versao` (hoje 1). Uma mudança de formato aumenta a versão e ganha uma função em `MIGRACOES`, que converte o save antigo. Um save de versão mais nova que o jogo não é carregado.
+- **Versão:** o save tem o campo `versao` (hoje 2). Uma mudança de formato aumenta a versão e ganha uma função em `MIGRACOES`, que converte o save antigo. Um save de versão mais nova que o jogo não é carregado.
+- **Migração 1 → 2 (v0.5):** o pedido genérico é descartado; os pedidos cumpridos viram contratos cumpridos e dão 5 de reputação cada, a partir de 20.
 - **Validação:** posições fora do terreno são trazidas para dentro, máquinas repetidas na mesma célula são descartadas, a saída respeita o limite de 8 caixas e os funcionários, o limite de 3. Se o armazenamento estiver bloqueado, o jogo roda sem salvar.
 - **Esteiras:** caixas que estavam andando na esteira voltam para a saída da máquina ao carregar, para nenhuma se perder.
 - **Testes:** `testes/salvamento.test.mjs`.
@@ -192,8 +214,8 @@ Todos os valores estão em `js/economia.js`, `js/automacao.js` e `js/catalogo.js
 | Funcionário | R$ 80 (máximo de 3) |
 | Esteira | R$ 40 |
 | Automação de máquina | R$ 100 |
-| Meta da campanha | R$ 1.000 em vendas |
-| Primeiro pedido | 5 caixas, bônus de R$ 30. Cada pedido cumprido soma 3 caixas e R$ 20 ao seguinte |
+| Meta da campanha | R$ 1.000 em vendas (contratos contam) |
+| Multa de contrato vencido | 25% do pagamento |
 
 | Caixa | Papelão simples | Reforçado |
 | --- | --- | --- |
@@ -205,7 +227,7 @@ A cor muda só a aparência. Uma máquina automática produz 20 caixas por minut
 
 ## Próximo passo
 
-v0.5 — Clientes, contratos e reputação: clientes que chegam à oficina com pedidos de produto, quantidade e prazo; reputação que sobe ou cai conforme as entregas. O save já está pronto para receber os novos dados por meio de uma migração da versão 1 para a 2.
+v0.6 — Qualidade, manutenção e energia: caixas com defeito separadas na inspeção, máquinas que se desgastam e quebram até receberem manutenção, e consumo de energia visível. Os contratos podem passar a exigir qualidade mínima, e devoluções de caixas defeituosas tiram reputação.
 
 ## Riscos
 

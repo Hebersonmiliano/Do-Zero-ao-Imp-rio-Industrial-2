@@ -34,27 +34,26 @@ export function importarEstoque(lista, produtoPorChave) {
   }
 }
 
-// Esvazia o estoque e devolve quanto ele vale em R$.
-export function venderTudo() {
-  let valor = 0;
-  for (const item of itens.values()) valor += item.quantidade * item.valor;
-  itens.clear();
-  return valor;
+export function quantidadeDe(chave) {
+  return itens.get(chave)?.quantidade ?? 0;
 }
 
-// Retira uma quantidade de caixas, começando pelas mais caras. Devolve o valor retirado, ou 0 se faltar estoque.
-export function retirarPedido(quantidade) {
-  if (totalNoEstoque() < quantidade) return 0;
-  const ordenados = [...itens.entries()].sort((a, b) => b[1].valor - a[1].valor);
-  let restante = quantidade;
+// Retira caixas de um produto exato (entrega de contrato). Devolve false sem mexer se faltar.
+export function retirar(chave, quantidade) {
+  const item = itens.get(chave);
+  if (!item || item.quantidade < quantidade) return false;
+  item.quantidade -= quantidade;
+  if (item.quantidade === 0) itens.delete(chave);
+  return true;
+}
+
+// Vende todo o estoque, menos os produtos reservados para contratos. Devolve o valor em R$.
+export function venderTudo(reservadas = new Set()) {
   let valor = 0;
-  for (const [chave, item] of ordenados) {
-    const tirar = Math.min(restante, item.quantidade);
-    item.quantidade -= tirar;
-    valor += tirar * item.valor;
-    restante -= tirar;
-    if (item.quantidade === 0) itens.delete(chave);
-    if (restante === 0) break;
+  for (const [chave, item] of [...itens.entries()]) {
+    if (reservadas.has(chave)) continue;
+    valor += item.quantidade * item.valor;
+    itens.delete(chave);
   }
   return valor;
 }

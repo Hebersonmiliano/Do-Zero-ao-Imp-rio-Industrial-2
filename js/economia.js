@@ -1,4 +1,4 @@
-// Economia da primeira campanha: dinheiro, custos e meta de vendas.
+// Economia da primeira campanha: dinheiro, custos e meta de vendas. Pedidos de clientes ficam em contratos.js.
 
 export const DINHEIRO_INICIAL = 100; // R$
 export const CUSTO_PRODUCAO = 2; // R$ de papelão por caixa produzida
@@ -9,24 +9,6 @@ export const META_VENDAS = 1000; // R$ em vendas para vencer a campanha
 
 let dinheiro = DINHEIRO_INICIAL;
 let vendido = 0;
-let pedido = { quantidade: 5, bonus: 30 }; // próximo pedido de cliente: caixas pedidas e bônus em R$
-let pedidosCumpridos = 0;
-
-export function getPedido() {
-  return pedido;
-}
-
-export function getPedidosCumpridos() {
-  return pedidosCumpridos;
-}
-
-// Registra o pedido cumprido: devolve o bônus e prepara um pedido maior.
-export function cumprirPedido() {
-  const bonus = pedido.bonus;
-  pedidosCumpridos += 1;
-  pedido = { quantidade: pedido.quantidade + 3, bonus: pedido.bonus + 20 };
-  return bonus;
-}
 
 export function getDinheiro() {
   return dinheiro;
@@ -43,6 +25,13 @@ export function pagar(valor) {
   return true;
 }
 
+// Cobra uma multa. Tira o que houver, sem deixar o dinheiro negativo. Devolve o valor cobrado.
+export function cobrarMulta(valor) {
+  const cobrado = Math.min(dinheiro, valor);
+  dinheiro -= cobrado;
+  return cobrado;
+}
+
 // Recebe uma venda da expedição.
 export function receber(valor) {
   dinheiro += valor;
@@ -51,7 +40,7 @@ export function receber(valor) {
 
 // Salvamento: estado da economia como dados simples.
 export function exportarEconomia() {
-  return { dinheiro, vendido, pedido: { ...pedido }, pedidosCumpridos };
+  return { dinheiro, vendido };
 }
 
 // Restaura a economia a partir de um save já validado. Valores inválidos voltam ao padrão.
@@ -59,12 +48,6 @@ export function importarEconomia(d = {}) {
   const numero = (v, padrao) => (Number.isFinite(v) && v >= 0 ? v : padrao);
   dinheiro = numero(d.dinheiro, DINHEIRO_INICIAL);
   vendido = numero(d.vendido, 0);
-  pedidosCumpridos = Math.floor(numero(d.pedidosCumpridos, 0));
-  const p = d.pedido ?? {};
-  pedido = {
-    quantidade: Math.max(1, Math.floor(numero(p.quantidade, 5))),
-    bonus: numero(p.bonus, 30),
-  };
 }
 
 export function venceu() {

@@ -25,11 +25,24 @@ import {
   totalNoEstoque,
   resumoEstoque,
   venderTudo,
-  retirarPedido,
+  quantidadeDe,
+  retirar,
   exportarEstoque,
   importarEstoque,
 } from './estoque.js';
 import { apagar, carregar, gravar, montarSave } from './salvamento.js';
+import {
+  MAX_ATIVOS,
+  aceitar,
+  atualizarContratos,
+  chavesReservadas,
+  entregar,
+  exportarQuadro,
+  importarQuadro,
+  nivel,
+  nomeCliente,
+  novoQuadro,
+} from './contratos.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
 import { criarCenario } from './cenario.js';
 import {
@@ -38,12 +51,10 @@ import {
   CUSTO_MAQUINA,
   CUSTO_PRODUCAO,
   META_VENDAS,
-  cumprirPedido,
+  cobrarMulta,
   exportarEconomia,
   importarEconomia,
   getDinheiro,
-  getPedido,
-  getPedidosCumpridos,
   getVendido,
   pagar,
   receber,
@@ -67,8 +78,10 @@ const elDetalheEstoque = document.getElementById('detalhe-estoque');
 const elDinheiro = document.getElementById('dinheiro');
 const elMeta = document.getElementById('meta');
 const elFuncionarios = document.getElementById('funcionarios');
-const elPedido = document.getElementById('pedido');
-const elPedidosCumpridos = document.getElementById('pedidos-cumpridos');
+const elReputacao = document.getElementById('reputacao');
+const elOfertas = document.getElementById('ofertas');
+const elAtivos = document.getElementById('ativos');
+const elHistorico = document.getElementById('historico-contratos');
 const elLinha = document.getElementById('linha');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -178,9 +191,6 @@ function atualizarPlacar() {
   elDinheiro.textContent = getDinheiro();
   elMeta.textContent = `${getVendido()} de ${META_VENDAS}`;
   elFuncionarios.textContent = funcionarios.length;
-  const pedido = getPedido();
-  elPedido.textContent = `${pedido.quantidade} caixas (bônus R$ ${pedido.bonus})`;
-  elPedidosCumpridos.textContent = getPedidosCumpridos();
   elLinha.textContent = resumoLinha();
 }
 
@@ -392,26 +402,102 @@ function registrarVenda(valor, texto) {
   );
 }
 
-// Na expedição: cumpre o pedido do cliente se houver caixas suficientes, senão vende todo o estoque.
+// Na expedição: entrega os contratos que o estoque cobre. Sem contrato pronto, vende o estoque
+// que nenhum contrato pediu (as caixas reservadas ficam guardadas).
 function venderNaExpedicao() {
   const p = jogador.position;
   if (Math.hypot(p.x - EXPEDICAO.x, p.z - EXPEDICAO.z) > 2.2) {
     mensagem('Leve o estoque à expedição (laranja) para vender.');
     return;
   }
-  const pedido = getPedido();
-  const valorPedido = retirarPedido(pedido.quantidade);
-  if (valorPedido > 0) {
-    const bonus = cumprirPedido();
-    registrarVenda(valorPedido + bonus, `Pedido cumprido: R$ ${valorPedido} + bônus de R$ ${bonus}.`);
+  const entregues = entregar(quadro, { quantidade: quantidadeDe, retirar });
+  if (entregues.length > 0) {
+    const total = entregues.reduce((t, c) => t + c.pagamento, 0);
+    const nomes = entregues.map((c) => nomeCliente(c.cliente)).join(', ');
+    registrarVenda(total, `Contrato entregue (${nomes}): R$ ${total}. Reputação ${quadro.reputacao}.`);
+    mostrarContratos();
     return;
   }
-  const valor = venderTudo();
+  const valor = venderTudo(chavesReservadas(quadro));
   if (valor === 0) {
-    mensagem('Nada no estoque para vender.');
+    mensagem(
+      totalNoEstoque() > 0
+        ? 'O estoque está reservado para contratos que ainda não fecharam a quantidade.'
+        : 'Nada no estoque para vender.',
+    );
     return;
   }
-  registrarVenda(valor, `Vendido por R$ ${valor}.`);
+  registrarVenda(valor, `Venda avulsa: R$ ${valor}.`);
+}
+
+// ===== Contratos =====
+
+let quadro = novoQuadro();
+
+function tempo(segundos) {
+  const s = Math.max(0, Math.ceil(segundos));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function nomeProduto(chave) {
+  return produtoPorChave(chave)?.nome ?? chave;
+}
+
+// Desenha o painel de contratos: reputação, ofertas (teclas 1 a 3) e contratos em andamento.
+function mostrarContratos() {
+  elReputacao.textContent = `${quadro.reputacao} · ${nivel(quadro.reputacao)}`;
+  elOfertas.replaceChildren(
+    ...quadro.ofertas.map((o, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<kbd>${i + 1}</kbd> <b></b><span></span><small></small>`;
+      li.querySelector('b').textContent = nomeCliente(o.cliente);
+      li.querySelector('span').textContent = `${o.quantidade}× ${nomeProduto(o.chave)} · R$ ${o.pagamento}`;
+      li.querySelector('small').textContent = `Prazo ${tempo(o.prazo)} · oferta some em ${tempo(o.validade)}`;
+      return li;
+    }),
+  );
+  if (quadro.ofertas.length === 0) elOfertas.innerHTML = '<li class="vazio">Aguardando clientes…</li>';
+  elAtivos.replaceChildren(
+    ...quadro.ativos.map((c) => {
+      const li = document.createElement('li');
+      const tem = Math.min(quantidadeDe(c.chave), c.quantidade);
+      li.className = c.restante < 20 ? 'urgente' : tem >= c.quantidade ? 'pronto' : '';
+      li.innerHTML = '<b></b><span></span><small></small>';
+      li.querySelector('b').textContent = nomeCliente(c.cliente);
+      li.querySelector('span').textContent = `${tem}/${c.quantidade} ${nomeProduto(c.chave)} · R$ ${c.pagamento}`;
+      li.querySelector('small').textContent =
+        tem >= c.quantidade ? `Pronto: entregue na expedição (V) · ${tempo(c.restante)}` : `Faltam ${tempo(c.restante)}`;
+      return li;
+    }),
+  );
+  if (quadro.ativos.length === 0) elAtivos.innerHTML = `<li class="vazio">Nenhum. Aceite até ${MAX_ATIVOS} ofertas.</li>`;
+  elHistorico.textContent = `${quadro.cumpridos} cumprido(s) · ${quadro.vencidos} vencido(s)`;
+}
+
+function aceitarOferta(posicao) {
+  const { contrato, erro } = aceitar(quadro, posicao);
+  if (erro) {
+    mensagem(erro);
+    return;
+  }
+  mensagem(`Contrato aceito: ${contrato.quantidade}× ${nomeProduto(contrato.chave)} para ${nomeCliente(contrato.cliente)}.`);
+  mostrarContratos();
+}
+
+let cronometroPainel = 0;
+function avancarContratos(dt) {
+  const eventos = atualizarContratos(quadro, dt, produtoPorChave);
+  if (eventos.novas.length) mensagem(`Novo cliente: ${nomeCliente(eventos.novas[0].cliente)} quer um contrato.`);
+  for (const { contrato, multa } of eventos.vencidos) {
+    const cobrado = cobrarMulta(multa);
+    mensagem(`Prazo vencido (${nomeCliente(contrato.cliente)}): multa de R$ ${cobrado}, reputação ${quadro.reputacao}.`);
+  }
+  cronometroPainel += dt;
+  if (cronometroPainel >= 0.25 || eventos.novas.length || eventos.expiradas.length || eventos.vencidos.length) {
+    cronometroPainel = 0;
+    mostrarContratos();
+    if (eventos.vencidos.length) atualizarPlacar();
+  }
 }
 
 // Troca um campo do catálogo (tamanho, cor ou material) e mostra a nova escolha.
@@ -430,6 +516,12 @@ const teclasDeAcao = {
   KeyL: ligarEsteira,
   KeyU: automatizarMaquina,
   KeyN: novoJogo,
+  Digit1: () => aceitarOferta(0),
+  Digit2: () => aceitarOferta(1),
+  Digit3: () => aceitarOferta(2),
+  Numpad1: () => aceitarOferta(0),
+  Numpad2: () => aceitarOferta(1),
+  Numpad3: () => aceitarOferta(2),
   KeyT: () => trocarCatalogo('tamanho', 'Tamanho'),
   KeyC: () => trocarCatalogo('cor', 'Cor'),
   KeyM: () => trocarCatalogo('material', 'Material'),
@@ -459,6 +551,7 @@ function salvarJogo() {
       economia: exportarEconomia(),
       estoque: exportarEstoque(),
       escolha: exportarEscolha(),
+      contratos: exportarQuadro(quadro),
       caixas,
       jogador: jogador.position,
       maquinas,
@@ -474,6 +567,7 @@ function restaurarJogo() {
   importarEconomia(save.economia);
   importarEstoque(save.estoque, produtoPorChave);
   importarEscolha(save.escolha);
+  quadro = importarQuadro(save.contratos, produtoPorChave);
   caixas = save.caixas;
   for (const dados of save.maquinas) {
     if (!cabeAqui(dados.x, dados.z)) continue;
@@ -534,8 +628,10 @@ renderer.setAnimationLoop(() => {
   atualizarJogador(jogador, teclas, dt);
   for (const f of funcionarios) atualizarFuncionario(f, dt, maquinas, acoesFuncionario);
   atualizarAutomacao(maquinas, dt, acoesLinha);
+  avancarContratos(dt);
   atualizarLuzes();
   renderer.render(cena, camera);
 });
 
 atualizarPlacar();
+mostrarContratos();

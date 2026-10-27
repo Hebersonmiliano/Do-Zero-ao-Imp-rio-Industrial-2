@@ -18,16 +18,24 @@
   <div id="hud">
     <div>Caixas produzidas: <strong id="caixas">0</strong></div>
     <div>Dinheiro: <strong id="dinheiro">0</strong> · Vendas: <strong id="meta">0</strong></div>
-    <div>Pedido do cliente: <strong id="pedido"></strong> · Cumpridos: <strong id="pedidos-cumpridos">0</strong></div>
     <div>Máquinas: <strong id="maquinas">0</strong> · Funcionários: <strong id="funcionarios">0</strong></div>
     <div>Linha: <strong id="linha">sem máquinas</strong></div>
     <div>Próxima caixa: <strong id="produto"></strong></div>
     <div>No estoque: <strong id="estoque">0</strong> <span id="detalhe-estoque" class="ajuda"></span></div>
     <div id="mensagem"></div>
-    <div class="ajuda">WASD ou setas: andar · B: máquina (R$ 60) · E: produzir · R: levar saída ao estoque · V: entregar pedido ou vender tudo na expedição</div>
+    <div class="ajuda">WASD ou setas: andar · B: máquina (R$ 60) · E: produzir · R: levar saída ao estoque · V: entregar contratos ou vender o estoque livre na expedição</div>
     <div class="ajuda">T: tamanho · C: cor · M: material · F: contratar funcionário (R$ 80) · L: esteira até o estoque (R$ 40) · U: automatizar máquina (R$ 100) ou reprogramar</div>
+    <div class="ajuda">1, 2, 3: aceitar oferta de contrato</div>
     <div class="ajuda">O jogo salva sozinho a cada 5 segundos · N duas vezes: novo jogo</div>
   </div>
+  <aside id="painel-contratos" aria-label="Contratos">
+    <div class="cabecalho"><h2>Contratos</h2><span>Reputação <strong id="reputacao">20</strong></span></div>
+    <h3>Ofertas <small>teclas 1, 2, 3 aceitam</small></h3>
+    <ol id="ofertas"></ol>
+    <h3>Em andamento <small>entregue na expedição com V</small></h3>
+    <ul id="ativos"></ul>
+    <p id="historico-contratos" class="ajuda"></p>
+  </aside>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

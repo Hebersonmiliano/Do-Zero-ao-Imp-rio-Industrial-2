@@ -2,22 +2,36 @@
 // Cada versão nova do formato ganha uma entrada em MIGRACOES, para saves antigos continuarem abrindo.
 
 export const CHAVE_SAVE = 'imperio-industrial-2:save';
-export const VERSAO_SAVE = 1;
+export const VERSAO_SAVE = 2;
 
 // MIGRACOES[n] converte um save da versão n para n + 1.
-const MIGRACOES = {};
+const MIGRACOES = {
+  // v1 → v2 (contratos): o pedido genérico some; os pedidos cumpridos viram contratos cumpridos
+  // e dão um pouco de reputação, para quem já jogava não começar do zero.
+  1(save) {
+    const cumpridos = Math.max(0, Math.floor(Number(save.economia?.pedidosCumpridos) || 0));
+    const { pedido, pedidosCumpridos, ...economia } = save.economia ?? {};
+    return {
+      ...save,
+      versao: 2,
+      economia,
+      contratos: { reputacao: Math.min(100, 20 + cumpridos * 5), cumpridos },
+    };
+  },
+};
 
 const numero = (v, padrao = 0) => (Number.isFinite(v) ? v : padrao);
 const dentro = (v, limite) => Math.max(-limite, Math.min(limite, numero(v)));
 
 // Monta o objeto salvo a partir das partes do jogo.
-export function montarSave({ economia, estoque, escolha, maquinas, funcionarios, jogador, caixas }) {
+export function montarSave({ economia, estoque, escolha, contratos, maquinas, funcionarios, jogador, caixas }) {
   return {
     versao: VERSAO_SAVE,
     salvoEm: new Date().toISOString(),
     economia,
     estoque,
     escolha,
+    contratos,
     caixas,
     jogador: { x: jogador.x, z: jogador.z },
     // Caixas em trânsito na esteira voltam para a saída: assim nenhuma se perde ao recarregar.
@@ -73,6 +87,7 @@ export function lerSave(texto, { limite = 11.5, capacidade = 8, maxFuncionarios 
     economia: dados.economia ?? {},
     estoque: lista(dados.estoque).filter((e) => Array.isArray(e) && typeof e[0] === 'string'),
     escolha: dados.escolha ?? {},
+    contratos: dados.contratos ?? null,
     caixas: Math.max(0, Math.floor(numero(dados.caixas))),
     jogador: { x: dentro(dados.jogador?.x, limite), z: dentro(dados.jogador?.z ?? 4, limite) },
     maquinas,
