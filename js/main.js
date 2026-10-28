@@ -724,7 +724,7 @@ function trocarCatalogo(campo, rotulo) {
 const teclasDeAcao = {
   KeyB: posicionarMaquina,
   KeyE: interagir,
-  KeyJ: abrirMenu,
+  KeyJ: () => (elMenu.hidden ? abrirMenu() : fecharMenu()),
   KeyR: recolherSaida,
   KeyV: venderNaExpedicao,
   KeyF: contratarFuncionario,
@@ -998,7 +998,7 @@ window.addEventListener('keydown', (e) => {
     return;
   }
   if (!elMenu.hidden) {
-    if (e.code === 'Escape') fecharMenu();
+    if (e.code === 'Escape' || e.code === 'KeyJ') fecharMenu();
     else if (e.code === 'ArrowDown' || e.code === 'KeyS') selecionarMenu(selecaoMenu + 1);
     else if (e.code === 'ArrowUp' || e.code === 'KeyW') selecionarMenu(selecaoMenu - 1);
     else return; // Enter e espaço ativam o botão focado normalmente.
@@ -1007,6 +1007,8 @@ window.addEventListener('keydown', (e) => {
   }
   musica.desbloquear();
   if (e.code === 'Escape') {
+    // Esc pertence ao navegador em tela cheia. J / botão Menu abrem sem sair.
+    if (document.fullscreenElement) return;
     abrirMenu();
     return;
   }
