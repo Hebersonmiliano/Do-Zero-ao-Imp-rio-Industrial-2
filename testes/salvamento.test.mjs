@@ -137,6 +137,17 @@ teste('defeitos, desgaste, inspetor, energia e refugo vão e voltam pelo save (v
   assert.deepEqual(lido.estoque, [['P-0-0', 5, 2]]);
 });
 
+teste('terreno expandido preserva máquinas e jogador no lote vizinho (v0.8)', () => {
+  const save = montarSave({
+    economia: {}, estoque: [], escolha: {}, caixas: 0, construcao: { nivel: 2 },
+    jogador: { x: 17, z: 5 }, maquinas: [{ x: 18, z: 6, saida: [] }], funcionarios: [],
+  });
+  const lido = lerSave(JSON.stringify(save));
+  assert.deepEqual(lido.construcao, { nivel: 2 });
+  assert.equal(lido.jogador.x, 17);
+  assert.equal(lido.maquinas[0].x, 18);
+});
+
 teste('gravar, carregar e apagar no armazenamento', () => {
   const mem = memoria();
   assert.equal(carregar(mem), null);
