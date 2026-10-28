@@ -1,6 +1,6 @@
 # Guia de como jogar — Do Zero ao Império Industrial 2
 
-Este guia explica tudo o que existe no jogo até a versão **0.6.3**: como começar, o que cada tecla faz, como funcionam contratos, automação, qualidade e energia, e estratégias para crescer rápido.
+Este guia explica tudo o que existe no jogo até a versão **0.8**: como começar, produzir, entregar com a van, expandir o terreno, decorar a propriedade e administrar qualidade e energia.
 
 **Jogue no navegador:** [Portal Pixel](https://hebersonmiliano.github.io/portal-jogos/jogo.html?id=imperio-industrial-2). Funciona no computador com teclado e mouse ou com controle de Xbox, PlayStation e similares.
 
@@ -162,6 +162,7 @@ Os prazos contam em tempo de jogo (minutos:segundos).
 ## 9. Funcionários
 
 - **F** contrata um funcionário (R$ 80, até 3). Não há salário nesta versão.
+- **G** compra a próxima melhoria da propriedade: terreno vizinho, escritório e fachada.
 - Eles trabalham sozinhos, de capacete amarelo:
   - **Produzem** em máquinas **manuais** que não estejam quebradas nem cheias, fabricando a caixa escolhida em "Próxima caixa". Cada caixa custa R$ 2, como a sua.
   - **Recolhem** a saída de máquinas **sem esteira** e levam ao estoque, carregando as caixas nas mãos.
@@ -283,6 +284,9 @@ Para guardar a partida fora do navegador ou continuar em outro computador:
 | Conserto | R$ 60 |
 | Inspeção manual | R$ 1 a cada 5 caixas |
 | Multa de contrato vencido | 25% do pagamento |
+| Terreno vizinho | R$ 350 |
+| Escritório administrativo | R$ 180 |
+| Fachada corporativa | R$ 120 |
 
 ## 19. Estratégias e dicas
 
@@ -331,4 +335,5 @@ Para guardar a partida fora do navegador ou continuar em outro computador:
 
 ---
 
-*Guia da versão 0.6.3. Os números deste guia vêm direto das regras do jogo (`js/`). Se uma versão nova mudar algo, o guia é atualizado junto.*
+*Guia da versão 0.8. Os números deste guia vêm direto das regras do jogo (`js/`). Se uma versão nova mudar algo, o guia é atualizado junto.*
+
