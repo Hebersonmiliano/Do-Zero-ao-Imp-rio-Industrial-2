@@ -101,15 +101,16 @@ teste('dados estragados são corrigidos ao ler', () => {
   assert.equal(getDinheiro(), 100);
 });
 
-teste('save da versão 1 é migrado até a atual (contratos, qualidade e energia)', () => {
+teste('save da versão 1 é migrado até a atual (contratos, qualidade, energia e frota)', () => {
   const v1 = {
     versao: 1, caixas: 9, jogador: { x: 0, z: 4 }, maquinas: [], funcionarios: [], estoque: [], escolha: {},
     economia: { dinheiro: 140, vendido: 300, pedido: { quantidade: 11, bonus: 70 }, pedidosCumpridos: 2 },
   };
   const lido = lerSave(JSON.stringify(v1));
-  assert.equal(lido.versao, 3, 'migra 1 → 2 → 3');
+  assert.equal(lido.versao, VERSAO_SAVE, 'migra todas as versões até a atual');
   assert.deepEqual(lido.economia, { dinheiro: 140, vendido: 300 });
   assert.equal(lido.refugo, 0);
+  assert.equal(lido.frota, null);
   assert.deepEqual(lido.contratos, { reputacao: 30, cumpridos: 2 });
 });
 
@@ -191,3 +192,4 @@ teste('detecta navegador que não deixa salvar', () => {
 });
 
 console.log(`\n${ok} testes passaram.`);
+
