@@ -10,6 +10,8 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
+**v0.6.3 — Salvamento mais seguro.** Indicador "Salvo há X s" na barra, aviso quando o navegador bloqueia o armazenamento, cópia de segurança do save, pedido de armazenamento persistente e código do progresso para levar a partida a outro navegador.
+
 **v0.6.2 — Controle, teclado e mouse.** Suporte a controle de Xbox, PlayStation e similares, barra de ações e menu clicáveis com o mouse, e dicas na tela que mostram a tecla ou o botão do controle conforme o que você está usando.
 
 **v0.6.1 — Trilha sonora.** Música original composta para o jogo, gerada no navegador, que cresce com a fábrica e muda à noite, mais efeitos sonoros novos.
@@ -145,7 +147,14 @@ O painel à direita mostra a reputação, até 3 ofertas e os contratos em andam
 
 ## Salvamento
 
-O jogo salva sozinho a cada 5 segundos e ao fechar ou trocar de aba. Ficam guardados o dinheiro, as vendas, a conta de luz, o refugo, a reputação, as ofertas e os contratos com o tempo que falta, o estoque, a caixa escolhida no catálogo, as máquinas (com saída, defeitos, desgaste, esteira, inspetor e automação), os funcionários e a posição do jogador. O save fica no navegador de quem joga; outro navegador ou aparelho começa do zero. Partidas salvas antes da v0.5 abrem normalmente: os pedidos cumpridos viram reputação.
+O jogo salva sozinho a cada 5 segundos e ao fechar ou trocar de aba. O canto da barra superior mostra **"Salvo há X s"**. Ficam guardados o dinheiro, as vendas, a conta de luz, o refugo, a reputação, as ofertas e os contratos com o tempo que falta, o estoque, a caixa escolhida no catálogo, as máquinas (com saída, defeitos, desgaste, esteira, inspetor e automação), os funcionários, o relógio e a posição do jogador.
+
+- **Onde fica:** no navegador de quem joga. Outro navegador, outro aparelho ou uma janela anônima começam do zero. Limpar os dados do site apaga o progresso.
+- **Cópia de segurança:** a cada minuto o jogo guarda uma segunda cópia; se o save principal estragar, ela é usada.
+- **Armazenamento persistente:** o jogo pede ao navegador para não apagar os dados sozinho quando faltar espaço.
+- **Navegador bloqueando:** se o navegador não deixar salvar (janela anônima ou dados de sites bloqueados), a tela inicial avisa e a barra mostra "Não está salvando" em vermelho.
+- **Código do progresso:** no menu (Esc ou Menu no controle), "Copiar código do progresso" gera um texto começando por `II2-` com a partida inteira. Em outro navegador, "Carregar progresso de um código" continua de onde parou. Guarde o código de vez em quando como backup.
+- Partidas salvas antes da v0.5 abrem normalmente.
 
 ## Como rodar
 
@@ -198,7 +207,7 @@ node testes/salvamento.test.mjs
 | `js/entrada.js` | Leitura do controle: zona morta, gatilhos, botões e mapeamento padrão |
 | `js/qualidade.js` | Desgaste, defeitos, quebra, manutenção e inspeção |
 | `js/energia.js` | Consumo, tarifas por hora, conta diária, dívida e corte |
-| `js/salvamento.js` | Save versionado no navegador: montar, validar, migrar, gravar e apagar |
+| `js/salvamento.js` | Save versionado no navegador: montar, validar, migrar, gravar, cópia de segurança e código do progresso |
 | `js/catalogo.js` | Tamanhos, cores e materiais das caixas |
 | `js/estoque.js` | Estoque separado por produto, vendas e retirada de pedidos |
 | `js/economia.js` | Dinheiro, custos, multas e meta da campanha |

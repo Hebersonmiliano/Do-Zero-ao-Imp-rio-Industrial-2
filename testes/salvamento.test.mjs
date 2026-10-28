@@ -1,6 +1,6 @@
 // Testes do salvamento versionado. Rodar na pasta do projeto: node testes/salvamento.test.mjs
 import assert from 'node:assert/strict';
-import { CHAVE_SAVE, VERSAO_SAVE, apagar, carregar, gravar, lerSave, montarSave } from '../js/salvamento.js';
+import { CHAVE_BACKUP, CHAVE_SAVE, VERSAO_SAVE, apagar, armazenamentoDisponivel, carregar, codigoDoSave, gravar, lerCodigo, lerSave, montarSave } from '../js/salvamento.js';
 import { ciclar, exportarEscolha, importarEscolha, produtoAtual, produtoPorChave } from '../js/catalogo.js';
 import { exportarEstoque, guardarNoEstoque, importarEstoque, totalNoEstoque } from '../js/estoque.js';
 import { exportarEconomia, getDinheiro, getVendido, importarEconomia, pagar, receber } from '../js/economia.js';
@@ -159,6 +159,35 @@ teste('armazenamento bloqueado não quebra o jogo', () => {
   assert.equal(gravar({ versao: 1 }, bloqueado), false);
   assert.equal(carregar(bloqueado), null);
   apagar(bloqueado);
+});
+
+teste('cópia de segurança salva o progresso se o save principal estragar (v0.6.3)', () => {
+  const mem = memoria();
+  const save = montarSave({ economia: exportarEconomia(), estoque: [], escolha: {}, caixas: 42, jogador: { x: 0, z: 4 }, maquinas: [], funcionarios: [] });
+  gravar(save, mem, { backup: true });
+  assert.ok(mem.dados.has(CHAVE_BACKUP));
+  mem.setItem(CHAVE_SAVE, '{estragado');
+  assert.equal(carregar(mem).caixas, 42, 'usa a cópia de segurança');
+  apagar(mem);
+  assert.equal(mem.dados.size, 0, 'novo jogo apaga as duas chaves');
+});
+
+teste('código do progresso vai e volta, com acentos, e código ruim é recusado', () => {
+  const save = montarSave({ economia: exportarEconomia(), estoque: [['M-1-1', 3, 0]], escolha: {}, caixas: 7, jogador: { x: 1, z: 2 }, maquinas: [], funcionarios: [] });
+  save.anotacao = 'Império çãõ';
+  const codigo = codigoDoSave(save);
+  assert.ok(codigo.startsWith('II2-'));
+  const volta = lerCodigo(`  ${codigo.slice(0, 20)}\n${codigo.slice(20)}  `);
+  assert.equal(volta.caixas, 7);
+  assert.equal(volta.anotacao, 'Império çãõ');
+  assert.equal(lerCodigo('qualquer coisa'), null);
+  assert.equal(lerCodigo('II2-@@@'), null);
+  assert.equal(lerCodigo('II2-' + btoa('{"versao":99}')), null, 'versão futura');
+});
+
+teste('detecta navegador que não deixa salvar', () => {
+  assert.equal(armazenamentoDisponivel(memoria()), true);
+  assert.equal(armazenamentoDisponivel({ setItem() { throw new Error('bloqueado'); }, removeItem() {} }), false);
 });
 
 console.log(`\n${ok} testes passaram.`);

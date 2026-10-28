@@ -1,6 +1,6 @@
 # Guia de como jogar — Do Zero ao Império Industrial 2
 
-Este guia explica tudo o que existe no jogo até a versão **0.6.2**: como começar, o que cada tecla faz, como funcionam contratos, automação, qualidade e energia, e estratégias para crescer rápido.
+Este guia explica tudo o que existe no jogo até a versão **0.6.3**: como começar, o que cada tecla faz, como funcionam contratos, automação, qualidade e energia, e estratégias para crescer rápido.
 
 **Jogue no navegador:** [Portal Pixel](https://hebersonmiliano.github.io/portal-jogos/jogo.html?id=imperio-industrial-2). Funciona no computador com teclado e mouse ou com controle de Xbox, PlayStation e similares.
 
@@ -249,9 +249,25 @@ Cada máquina tem uma torre de luz:
 
 ## 17. Salvamento e novo jogo
 
-- O jogo salva sozinho a cada 5 segundos e ao fechar ou trocar de aba. Na tela inicial aparece **Continuar** com o dia, a hora e o dinheiro da partida salva.
+- O jogo salva sozinho a cada 5 segundos e ao fechar ou trocar de aba. O canto da barra superior mostra **"Salvo há X s"**.
+- Na tela inicial aparece **Continuar** com o dia, a hora e o dinheiro da partida salva.
 - O save fica **no navegador**. Outro navegador, outro computador ou uma janela anônima começam do zero. Limpar os dados do site apaga o progresso.
-- **N duas vezes** (em até 3 segundos) apaga o progresso e recomeça.
+- A cada minuto o jogo guarda uma **cópia de segurança**, usada se o save principal estragar.
+- Se a barra mostrar **"Não está salvando"** em vermelho, o navegador está bloqueando o armazenamento (janela anônima ou dados de sites bloqueados). A tela inicial também avisa. Nesse caso, use o código do progresso.
+
+### Código do progresso
+
+Para guardar a partida fora do navegador ou continuar em outro computador:
+
+1. Abra o menu (**Esc**, botão **Mais** ou **Menu** no controle).
+2. Escolha **Copiar código do progresso**. Aparece um texto que começa com `II2-` e ele já vai para a área de transferência. Guarde num arquivo ou mande para você mesmo.
+3. No outro navegador, abra o menu, escolha **Carregar progresso de um código**, cole o texto e clique em **Carregar**. A partida atual daquele navegador é substituída.
+
+> Dica: copie o código de vez em quando. É o seu backup, mesmo que alguém limpe o navegador.
+
+### Novo jogo
+
+**N** duas vezes (em até 3 segundos), ou **Novo jogo** no menu confirmando duas vezes, apaga o progresso e a cópia de segurança e recomeça.
 
 ## 18. Tabela de custos
 
@@ -309,8 +325,10 @@ Cada máquina tem uma torre de luz:
 
 **Dá para jogar no celular?** Ainda não: o jogo precisa de teclado, mouse ou controle.
 
+**Perdi meu progresso.** O save fica no navegador em que você jogou. Confira se está no mesmo navegador, sem janela anônima, e se os dados do site não foram limpos. A versão de testes que abre dentro do Claude é separada do Portal Pixel e pode não guardar o save; jogue pelo portal. Para nunca mais perder, copie o código do progresso no menu de vez em quando.
+
 **Meu controle não funciona.** Aperte qualquer botão com a página do jogo em foco; o navegador só mostra o controle ao site depois disso. Controles de Xbox e PlayStation funcionam por USB ou Bluetooth em navegadores como Chrome, Edge e Firefox.
 
 ---
 
-*Guia da versão 0.6.2. Os números deste guia vêm direto das regras do jogo (`js/`). Se uma versão nova mudar algo, o guia é atualizado junto.*
+*Guia da versão 0.6.3. Os números deste guia vêm direto das regras do jogo (`js/`). Se uma versão nova mudar algo, o guia é atualizado junto.*

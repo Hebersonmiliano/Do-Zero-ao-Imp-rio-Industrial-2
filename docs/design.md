@@ -156,6 +156,7 @@ Decididas em 2026-10-27, antes da v0.1:
 | v0.6 | Concluída | Desgaste, defeitos e quebra das máquinas; manutenção (K); inspeção manual e inspetor automático (I); devoluções em contratos; energia com tarifa por hora, conta diária e corte. |
 | v0.6.1 | Concluída | Trilha sonora original adaptativa (dia e noite, camadas por intensidade) e efeitos sonoros, tudo sintetizado. |
 | v0.6.2 | Concluída | Controle de Xbox e similares (Gamepad API, mapeamento padrão, vibração), barra de ações e menu de comandos clicáveis, ofertas clicáveis e dicas que alternam entre teclado e controle. |
+| v0.6.3 | Concluída | Salvamento mais seguro: indicador, aviso de armazenamento bloqueado, cópia de segurança, armazenamento persistente e código do progresso para exportar e importar. |
 | Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
@@ -253,6 +254,9 @@ O primeiro jogo usa um loop de 35 segundos (108 BPM, mono, 22 kHz) que repete ig
 - **Migração 2 → 3 (v0.6):** máquinas começam sem desgaste, estoque sem defeitos, refugo zerado e conta de luz nova. Caixas com defeito na saída de uma máquina são gravadas com `*` no fim da chave, e o estoque grava `[chave, quantidade, defeituosas]`.
 - **Validação:** posições fora do terreno são trazidas para dentro, máquinas repetidas na mesma célula são descartadas, a saída respeita o limite de 8 caixas e os funcionários, o limite de 3. Se o armazenamento estiver bloqueado, o jogo roda sem salvar.
 - **Esteiras:** caixas que estavam andando na esteira voltam para a saída da máquina ao carregar, para nenhuma se perder.
+- **Cópia de segurança (v0.6.3):** chave `imperio-industrial-2:save:backup`, atualizada a cada 12 salvamentos (1 minuto). `carregar` usa a cópia se o save principal faltar ou estiver estragado; novo jogo apaga as duas.
+- **Código do progresso (v0.6.3):** o save em JSON, codificado em UTF-8 e base64, com o prefixo `II2-`. É validado por `lerSave` antes de ser aceito.
+- **Armazenamento bloqueado:** todo acesso ao `localStorage` fica dentro de `try`, porque alguns navegadores lançam erro só de acessá-lo. O jogo continua jogável e avisa que não está salvando.
 - **Testes:** `testes/salvamento.test.mjs`.
 
 ## Economia atual
