@@ -38,7 +38,7 @@ const numero = (v, padrao = 0) => (Number.isFinite(v) ? v : padrao);
 const dentro = (v, limite) => Math.max(-limite, Math.min(limite, numero(v)));
 
 // Monta o objeto salvo a partir das partes do jogo.
-export function montarSave({ economia, estoque, escolha, contratos, energia = null, frota = null, construcao = null, refugo = 0, maquinas, funcionarios, jogador, caixas, relogio = 0 }) {
+export function montarSave({ economia, estoque, escolha, contratos, energia = null, frota = null, construcao = null, campanha = 0, refugo = 0, maquinas, funcionarios, jogador, caixas, relogio = 0 }) {
   return {
     versao: VERSAO_SAVE,
     salvoEm: new Date().toISOString(),
@@ -49,6 +49,7 @@ export function montarSave({ economia, estoque, escolha, contratos, energia = nu
     energia,
     frota,
     construcao,
+    campanha,
     refugo,
     caixas,
     relogio,
@@ -122,6 +123,7 @@ export function lerSave(texto, { limite = 11.5, capacidade = 8, maxFuncionarios 
     energia: dados.energia ?? null,
     frota: dados.frota ?? null,
     construcao: { nivel: nivelConstrucao },
+    campanha: Math.max(0, Math.min(8, Math.floor(numero(dados.campanha)))),
     refugo: Math.max(0, Math.floor(numero(dados.refugo))),
     caixas: Math.max(0, Math.floor(numero(dados.caixas))),
     relogio: Math.max(0, numero(dados.relogio)), // segundos de jogo desde o início do dia 1
