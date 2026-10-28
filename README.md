@@ -6,6 +6,8 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 **Jogue no Portal Pixel:** https://hebersonmiliano.github.io/portal-jogos/jogo.html?id=imperio-industrial-2
 
+**Guia completo de como jogar:** [docs/GUIA.md](docs/GUIA.md)
+
 ## Estado atual
 
 **v0.6.1 — Trilha sonora.** Música original composta para o jogo, gerada no navegador, que cresce com a fábrica e muda à noite, mais efeitos sonoros novos.
@@ -173,6 +175,7 @@ node testes/salvamento.test.mjs
 | `js/funcionarios.js` | Funcionários que produzem e transportam sozinhos |
 | `js/vendor/` | Three.js 0.186.1 (`three.module.js` e `three.core.js`, licença MIT) |
 | `testes/` | Testes automatizados no Node |
+| `docs/GUIA.md` | Guia completo de como jogar, com imagens |
 | `docs/design.md` | Documento de projeto: visão, sistemas, fases, arquitetura, roteiro e estado |
 
 ## Documentação
