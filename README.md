@@ -10,7 +10,9 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
-**v0.6.3 — Salvamento mais seguro.** Indicador "Salvo há X s" na barra, aviso quando o navegador bloqueia o armazenamento, cópia de segurança do save, pedido de armazenamento persistente e código do progresso para levar a partida a outro navegador.
+**v0.7 — Veículos e mapa de entregas.** Os contratos prontos agora são carregados na van; distância e trânsito consomem o prazo, o pagamento acontece na chegada e o veículo precisa voltar à doca. O painel mostra a rota em tempo real.
+
+Antes dela veio a **v0.6.3 — Salvamento mais seguro.** Indicador "Salvo há X s" na barra, aviso quando o navegador bloqueia o armazenamento, cópia de segurança do save, pedido de armazenamento persistente e código do progresso para levar a partida a outro navegador.
 
 **v0.6.2 — Controle, teclado e mouse.** Suporte a controle de Xbox, PlayStation e similares, barra de ações e menu clicáveis com o mouse, e dicas na tela que mostram a tecla ou o botão do controle conforme o que você está usando.
 
@@ -28,7 +30,7 @@ O que já dá para jogar:
 - Posicionar máquinas na grade e produzir caixas à mão.
 - Escolher tamanho, cor e material de cada caixa.
 - Guardar a produção no estoque, separada por produto.
-- Aceitar contratos de seis tipos de clientes e entregá-los na expedição, ou vender o estoque livre.
+- Aceitar contratos de seis tipos de clientes, despachar a van por rotas com trânsito e vender o estoque livre.
 - Ganhar reputação para liberar clientes maiores.
 - Contratar até 3 funcionários que produzem e levam caixas ao estoque sozinhos.
 - Ligar esteiras e automatizar máquinas.
@@ -48,7 +50,7 @@ O jogo funciona com **teclado e mouse** ou **controle** (Xbox, PlayStation e sim
 | Analógico direito | Girar a câmera (esquerda e direita) e zoom (cima e baixo) |
 | A | Produzir caixa · na tela inicial, começar |
 | B | Levar a saída ao estoque |
-| X | Entregar contratos ou vender na expedição |
+| X | Despachar a van ou vender na expedição |
 | Y | Colocar máquina |
 | LB | Manutenção ou conserto |
 | RB | Inspecionar estoque ou instalar inspetor |
@@ -69,7 +71,7 @@ O controle vibra nas vendas e quando uma máquina quebra (se o controle e o nave
 | B | Posicionar máquina na célula marcada no chão à frente do jogador (R$ 60) |
 | E | Produzir uma caixa na máquina próxima (R$ 2 de papelão) |
 | R | Levar a saída da máquina próxima ao estoque |
-| V | Na expedição: entregar os contratos que o estoque cobre; sem contrato pronto, vender o estoque que nenhum contrato pediu |
+| V | Na expedição: carregar na van o contrato pronto; sem contrato pronto, vender o estoque livre |
 | 1, 2, 3 | Aceitar a oferta de contrato nessa posição |
 | K | Perto da máquina: manutenção preventiva (até R$ 30) ou conserto, se estiver quebrada (R$ 60) |
 | I | Perto do estoque: inspecionar tudo (R$ 1 a cada 5 caixas). Perto de máquina com esteira: instalar inspetor automático (R$ 80) |
@@ -175,6 +177,7 @@ node testes/automacao.test.mjs
 node testes/composicao.test.mjs
 node testes/contratos.test.mjs
 node testes/entrada.test.mjs
+node testes/entregas.test.mjs
 node testes/qualidade.test.mjs
 node testes/rotas.test.mjs
 node testes/salvamento.test.mjs
@@ -220,3 +223,4 @@ node testes/salvamento.test.mjs
 ## Documentação
 
 O documento de projeto completo, com o estado de cada versão e os números da economia, está em [docs/design.md](docs/design.md).
+
