@@ -157,6 +157,7 @@ Decididas em 2026-10-27, antes da v0.1:
 | v0.6.1 | Concluída | Trilha sonora original adaptativa (dia e noite, camadas por intensidade) e efeitos sonoros, tudo sintetizado. |
 | v0.6.2 | Concluída | Controle de Xbox e similares (Gamepad API, mapeamento padrão, vibração), barra de ações e menu de comandos clicáveis, ofertas clicáveis e dicas que alternam entre teclado e controle. |
 | v0.6.3 | Concluída | Salvamento mais seguro: indicador, aviso de armazenamento bloqueado, cópia de segurança, armazenamento persistente e código do progresso para exportar e importar. |
+| v0.7 | Concluída | Uma van carrega contratos na doca, percorre rotas com distância e trânsito, entrega e retorna; mapa no HUD mostra a viagem. |
 | Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
@@ -179,7 +180,7 @@ Ainda não existem: clientes andando no cenário, negociação de prazo e preço
 
 - **Ofertas:** a primeira chega logo no começo; depois, uma a cada 30 segundos de jogo, ou a cada 10 segundos se o quadro estiver vazio. Ficam até 3 no quadro, e cada uma some depois de 60 segundos sem aceite, sem penalidade.
 - **Contrato:** pede um produto exato do catálogo (tamanho, cor e material), uma quantidade e um prazo. O pagamento por caixa é o preço da venda avulsa × a margem do cliente × (1 + reputação ÷ 200). Até 3 contratos ao mesmo tempo (teclas 1, 2 e 3 aceitam).
-- **Entrega:** V na expedição entrega todos os contratos que o estoque já cobre, do prazo mais curto ao mais longo. Sem contrato pronto, V vende o estoque livre; produtos pedidos por contratos em andamento ficam guardados.
+- **Entrega:** V na expedição carrega na van o contrato pronto com prazo mais curto. O prazo continua correndo durante a rota; o pagamento acontece na chegada e a van precisa voltar antes de outro despacho. Sem contrato pronto, V vende o estoque livre.
 - **Prazo vencido:** multa de 25% do pagamento (sem deixar o dinheiro negativo) e −10 de reputação.
 - **Reputação:** começa em 20 e vai de 0 a 100; +5 por entrega no prazo. Faixas: Bairro (0), Distrito (30), Regional (60) e Referência (85).
 - **Critério de pronto atendido:** contrato aceito, entregue e a reputação muda. Verificado em `testes/contratos.test.mjs` e jogando no navegador.
@@ -249,7 +250,7 @@ O primeiro jogo usa um loop de 35 segundos (108 BPM, mono, 22 kHz) que repete ig
 - **Quando:** a cada 5 segundos, ao fechar a página e ao trocar de aba.
 - **O que:** relógio do dia, economia (dinheiro e vendido), quadro de contratos (reputação, ofertas, contratos com o tempo restante, cumpridos e vencidos), estoque por produto, escolha do catálogo, total de caixas produzidas, máquinas (posição, saída, esteira, automação e produto programado), posição dos funcionários e do jogador.
 - **Produtos:** gravados só pela chave (por exemplo `M-1-0`) e reconstruídos pelo catálogo ao carregar. Se um preço mudar no catálogo, o save antigo usa o preço novo.
-- **Versão:** o save tem o campo `versao` (hoje 3). Uma mudança de formato aumenta a versão e ganha uma função em `MIGRACOES`, que converte o save antigo. Um save de versão mais nova que o jogo não é carregado.
+- **Versão:** o save tem o campo versao (hoje 4). Uma mudança de formato aumenta a versão e ganha uma função em MIGRACOES, que converte o save antigo.
 - **Migração 1 → 2 (v0.5):** o pedido genérico é descartado; os pedidos cumpridos viram contratos cumpridos e dão 5 de reputação cada, a partir de 20.
 - **Migração 2 → 3 (v0.6):** máquinas começam sem desgaste, estoque sem defeitos, refugo zerado e conta de luz nova. Caixas com defeito na saída de uma máquina são gravadas com `*` no fim da chave, e o estoque grava `[chave, quantidade, defeituosas]`.
 - **Validação:** posições fora do terreno são trazidas para dentro, máquinas repetidas na mesma célula são descartadas, a saída respeita o limite de 8 caixas e os funcionários, o limite de 3. Se o armazenamento estiver bloqueado, o jogo roda sem salvar.
@@ -284,7 +285,7 @@ A cor muda só a aparência. Uma máquina automática produz 20 caixas por minut
 
 ## Próximo passo
 
-v0.7 — Veículos e mapa de entregas: a van sai da doca com os contratos, percorre uma rota no mapa da cidade e volta. Distância e trânsito passam a contar no prazo, e a frota cresce com vans e caminhões.
+v0.8 — Decoração e construção avançada: compra de terreno, expansão da área útil e personalização do escritório e do galpão.
 
 ## Riscos
 
@@ -299,3 +300,4 @@ v0.7 — Veículos e mapa de entregas: a van sai da doca com os contratos, perco
 ## Referências
 
 - Primeiro jogo: [github.com/Hebersonmiliano/imperio-industrial-3d](https://github.com/Hebersonmiliano/imperio-industrial-3d)
+
