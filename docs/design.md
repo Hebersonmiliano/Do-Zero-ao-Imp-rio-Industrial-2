@@ -158,6 +158,7 @@ Decididas em 2026-10-27, antes da v0.1:
 | v0.6.2 | Concluída | Controle de Xbox e similares (Gamepad API, mapeamento padrão, vibração), barra de ações e menu de comandos clicáveis, ofertas clicáveis e dicas que alternam entre teclado e controle. |
 | v0.6.3 | Concluída | Salvamento mais seguro: indicador, aviso de armazenamento bloqueado, cópia de segurança, armazenamento persistente e código do progresso para exportar e importar. |
 | v0.7 | Concluída | Uma van carrega contratos na doca, percorre rotas com distância e trânsito, entrega e retorna; mapa no HUD mostra a viagem. |
+| v0.8 | Concluída | Terreno vizinho comprável, área de produção ampliada, escritório administrativo e fachada corporativa em três etapas persistentes. |
 | Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
@@ -253,6 +254,7 @@ O primeiro jogo usa um loop de 35 segundos (108 BPM, mono, 22 kHz) que repete ig
 - **Versão:** o save tem o campo versao (hoje 4). Uma mudança de formato aumenta a versão e ganha uma função em MIGRACOES, que converte o save antigo.
 - **Migração 1 → 2 (v0.5):** o pedido genérico é descartado; os pedidos cumpridos viram contratos cumpridos e dão 5 de reputação cada, a partir de 20.
 - **Migração 2 → 3 (v0.6):** máquinas começam sem desgaste, estoque sem defeitos, refugo zerado e conta de luz nova. Caixas com defeito na saída de uma máquina são gravadas com `*` no fim da chave, e o estoque grava `[chave, quantidade, defeituosas]`.
+- **Migração 4 → 5 (v0.8):** partidas antigas começam no nível 0 da propriedade; terreno e melhorias comprados passam a ser salvos.
 - **Validação:** posições fora do terreno são trazidas para dentro, máquinas repetidas na mesma célula são descartadas, a saída respeita o limite de 8 caixas e os funcionários, o limite de 3. Se o armazenamento estiver bloqueado, o jogo roda sem salvar.
 - **Esteiras:** caixas que estavam andando na esteira voltam para a saída da máquina ao carregar, para nenhuma se perder.
 - **Cópia de segurança (v0.6.3):** chave `imperio-industrial-2:save:backup`, atualizada a cada 12 salvamentos (1 minuto). `carregar` usa a cópia se o save principal faltar ou estiver estragado; novo jogo apaga as duas.
@@ -274,6 +276,9 @@ Todos os valores estão em `js/economia.js`, `js/automacao.js` e `js/catalogo.js
 | Automação de máquina | R$ 100 |
 | Meta da campanha | R$ 1.000 em vendas (contratos contam) |
 | Multa de contrato vencido | 25% do pagamento |
+| Terreno vizinho | R$ 350 |
+| Escritório administrativo | R$ 180 |
+| Fachada corporativa | R$ 120 |
 
 | Caixa | Papelão simples | Reforçado |
 | --- | --- | --- |
@@ -285,7 +290,7 @@ A cor muda só a aparência. Uma máquina automática produz 20 caixas por minut
 
 ## Próximo passo
 
-v0.8 — Decoração e construção avançada: compra de terreno, expansão da área útil e personalização do escritório e do galpão.
+v0.9 — Campanha, balanceamento e otimização: ligar as oito fases numa campanha completa, revisar a economia e melhorar o desempenho.
 
 ## Riscos
 
