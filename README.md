@@ -10,6 +10,8 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
+**v0.9 — Campanha do Distrito.** Oito objetivos sequenciais acompanham vendas, produção, equipe, automação, contratos, viagens e propriedade, terminando em R$ 5.000 em vendas. Marcos ficam salvos. A simulação usa passos fixos e pausa no menu e na tela inicial. Os comandos originais continuam disponíveis. Esta campanha usa o Distrito atual; múltiplas fábricas e exportação ainda não estão implementadas.
+
 **v0.8 — Expansão e construção avançada.** Compre o terreno vizinho para liberar novas células de produção, construa um escritório administrativo e finalize a propriedade com uma fachada corporativa iluminada. As três etapas aparecem no cenário e ficam no save.
 
 **v0.7 — Veículos e mapa de entregas.** Os contratos prontos agora são carregados na van; distância e trânsito consomem o prazo, o pagamento acontece na chegada e o veículo precisa voltar à doca. O painel mostra a rota em tempo real.
