@@ -4,6 +4,8 @@ Sequência da série *Do Zero ao Império Industrial*. O jogador começa em uma 
 
 Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmiliano/imperio-industrial-3d) e não reaproveita o código dele.
 
+**Jogue no Portal Pixel:** https://hebersonmiliano.github.io/portal-jogos/jogo.html?id=imperio-industrial-2
+
 ## Estado atual
 
 **v0.6.1 — Trilha sonora.** Música original composta para o jogo, gerada no navegador, que cresce com a fábrica e muda à noite, mais efeitos sonoros novos.
