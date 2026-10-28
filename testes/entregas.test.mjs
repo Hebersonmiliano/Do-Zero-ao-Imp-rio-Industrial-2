@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { atualizarEntregas, despachar, importarFrota, novaFrota, ROTAS, veiculoLivre } from '../js/entregas.js';
+import { novoQuadro } from '../js/contratos.js';
+let ok = 0; function teste(nome, fn) { fn(); ok++; console.log('PASS: ' + nome); }
+function pronto(restante = 60) { const q = novoQuadro(); q.ativos.push({ id: 7, cliente: 'mercadinho', chave: 'P-0-0', quantidade: 4, pagamento: 100, prazo: 90, restante }); let quantidade = 4; return { q, estoque: { quantidade: () => quantidade, retirar: (_, n) => { quantidade -= n; return { defeituosas: 0 }; } }, quantidade: () => quantidade }; }
+teste('despacho carrega a van e escolhe rota e trânsito', () => { const { q, estoque, quantidade } = pronto(); const f = novaFrota(); const { viagem } = despachar(q, estoque, f, () => 0.5); assert.equal(q.ativos.length, 0); assert.equal(quantidade(), 0); assert.equal(viagem.distancia, ROTAS.mercadinho.distancia); assert.equal(viagem.transito, 'normal'); assert.equal(veiculoLivre(f), null); });
+teste('contrato só paga na chegada e van volta antes de liberar', () => { const { q, estoque } = pronto(); const f = novaFrota(); const { viagem } = despachar(q, estoque, f, () => 0.5); assert.equal(atualizarEntregas(f, q, viagem.duracaoIda - 1).chegadas.length, 0); const ev = atualizarEntregas(f, q, 1.1); assert.equal(ev.chegadas[0].recebido, 100); assert.equal(q.cumpridos, 1); assert.equal(veiculoLivre(f), null); assert.equal(atualizarEntregas(f, q, viagem.duracaoIda + 0.1).retornos.length, 1); assert.ok(veiculoLivre(f)); });
+teste('prazo pode vencer durante a rota', () => { const { q, estoque } = pronto(2); const f = novaFrota(); despachar(q, estoque, f, () => 0.99); const ev = atualizarEntregas(f, q, 2.1); assert.equal(ev.vencidos.length, 1); assert.equal(q.vencidos, 1); assert.equal(q.reputacao, 10); });
+teste('viagem em andamento volta pelo save', () => { const { q, estoque } = pronto(); const f = novaFrota(); despachar(q, estoque, f, () => 0); atualizarEntregas(f, q, 3); const volta = importarFrota(JSON.parse(JSON.stringify(f))); assert.equal(volta.viagens.length, 1); assert.equal(volta.veiculos[0].estado, 'entrega'); });
+console.log('\n' + ok + ' testes passaram.');
+
