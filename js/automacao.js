@@ -12,10 +12,13 @@ export function saidaCheia(maquina) {
 }
 
 // Situação da máquina, usada na luz do topo e no HUD.
-// manual: sem automação · produzindo · sem-dinheiro: falta papelão · cheia: saída lotada, linha parada.
-export function estadoMaquina(maquina, podePagar) {
+// quebrada: precisa de conserto · sem-energia: conta de luz atrasada · cheia: saída lotada ·
+// manual: sem automação · produzindo · sem-dinheiro: falta papelão.
+export function estadoMaquina(maquina, podePagar, semEnergia = false) {
+  if (maquina.quebrada) return 'quebrada';
   if (saidaCheia(maquina)) return 'cheia';
   if (!maquina.automatica) return 'manual';
+  if (semEnergia) return 'sem-energia';
   return podePagar ? 'produzindo' : 'sem-dinheiro';
 }
 
@@ -29,12 +32,14 @@ export function programar(maquina, produto) {
 }
 
 // Avança a linha em dt segundos.
-// acoes: podePagar(), produzir(maquina, produto), posicionar(item, maquina, progresso 0..1), entregar(item)
+// acoes: podePagar(), produzir(maquina, produto), posicionar(item, maquina, progresso 0..1), entregar(item),
+// e opcionais semEnergia() (corte de luz: linha parada) e descartar(item) (inspetor separou um defeito).
 export function atualizarAutomacao(maquinas, dt, acoes) {
+  const semEnergia = acoes.semEnergia?.() ?? false;
   for (const m of maquinas) {
-    // Produção automática: para quando a saída enche ou falta dinheiro para o papelão.
+    // Produção automática: para com a máquina quebrada, sem energia, com a saída cheia ou sem papelão.
     if (m.automatica) {
-      if (saidaCheia(m) || !acoes.podePagar()) {
+      if (m.quebrada || semEnergia || saidaCheia(m) || !acoes.podePagar()) {
         m.cronometroProducao = Math.min(m.cronometroProducao ?? 0, TEMPO_AUTOMATICO);
       } else {
         m.cronometroProducao = (m.cronometroProducao ?? 0) + dt;
@@ -45,7 +50,7 @@ export function atualizarAutomacao(maquinas, dt, acoes) {
       }
     }
 
-    if (!m.esteira) continue;
+    if (!m.esteira || semEnergia) continue;
     m.transito ??= [];
 
     // A esteira pega a caixa do topo da pilha em intervalos fixos: é o limite de vazão da linha.
@@ -53,8 +58,13 @@ export function atualizarAutomacao(maquinas, dt, acoes) {
     if (m.saida.length > 0 && m.cronometroEsteira >= INTERVALO_ESTEIRA) {
       m.cronometroEsteira = 0;
       const item = m.saida.pop();
-      item.progresso = 0;
-      m.transito.push(item);
+      if (m.inspecao && item.defeito) {
+        // O inspetor na saída da esteira manda a caixa defeituosa para o refugo.
+        acoes.descartar?.(item, m);
+      } else {
+        item.progresso = 0;
+        m.transito.push(item);
+      }
     } else if (m.saida.length === 0) {
       m.cronometroEsteira = Math.min(m.cronometroEsteira, INTERVALO_ESTEIRA);
     }

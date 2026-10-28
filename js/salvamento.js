@@ -2,7 +2,7 @@
 // Cada versão nova do formato ganha uma entrada em MIGRACOES, para saves antigos continuarem abrindo.
 
 export const CHAVE_SAVE = 'imperio-industrial-2:save';
-export const VERSAO_SAVE = 2;
+export const VERSAO_SAVE = 3;
 
 // MIGRACOES[n] converte um save da versão n para n + 1.
 const MIGRACOES = {
@@ -18,13 +18,17 @@ const MIGRACOES = {
       contratos: { reputacao: Math.min(100, 20 + cumpridos * 5), cumpridos },
     };
   },
+  // v2 → v3 (qualidade e energia): máquinas começam sem desgaste, estoque sem defeitos e conta de luz zerada.
+  2(save) {
+    return { ...save, versao: 3, refugo: 0, energia: null };
+  },
 };
 
 const numero = (v, padrao = 0) => (Number.isFinite(v) ? v : padrao);
 const dentro = (v, limite) => Math.max(-limite, Math.min(limite, numero(v)));
 
 // Monta o objeto salvo a partir das partes do jogo.
-export function montarSave({ economia, estoque, escolha, contratos, maquinas, funcionarios, jogador, caixas, relogio = 0 }) {
+export function montarSave({ economia, estoque, escolha, contratos, energia = null, refugo = 0, maquinas, funcionarios, jogador, caixas, relogio = 0 }) {
   return {
     versao: VERSAO_SAVE,
     salvoEm: new Date().toISOString(),
@@ -32,6 +36,8 @@ export function montarSave({ economia, estoque, escolha, contratos, maquinas, fu
     estoque,
     escolha,
     contratos,
+    energia,
+    refugo,
     caixas,
     relogio,
     jogador: { x: jogador.x, z: jogador.z },
@@ -39,9 +45,13 @@ export function montarSave({ economia, estoque, escolha, contratos, maquinas, fu
     maquinas: maquinas.map((m) => ({
       x: m.x,
       z: m.z,
-      saida: [...m.saida, ...(m.transito ?? [])].map((item) => item.produto.chave),
+      // Caixa com defeito ganha um * no fim da chave (ex.: "M-1-0*").
+      saida: [...m.saida, ...(m.transito ?? [])].map((item) => item.produto.chave + (item.defeito ? '*' : '')),
       esteira: !!m.esteira,
       automatica: !!m.automatica,
+      inspecao: !!m.inspecao,
+      desgaste: m.desgaste ?? 0,
+      quebrada: !!m.quebrada,
       produto: m.produto?.chave ?? null,
     })),
     funcionarios: funcionarios.map((f) => ({ x: f.x, z: f.z })),
@@ -76,9 +86,15 @@ export function lerSave(texto, { limite = 11.5, capacidade = 8, maxFuncionarios 
     maquinas.push({
       x,
       z,
-      saida: lista(m.saida).filter((c) => typeof c === 'string').slice(0, capacidade),
+      saida: lista(m.saida)
+        .filter((c) => typeof c === 'string')
+        .slice(0, capacidade)
+        .map((c) => ({ chave: c.replace(/\*$/, ''), defeito: c.endsWith('*') })),
       esteira: !!m.esteira,
       automatica: !!m.automatica,
+      inspecao: !!m.inspecao,
+      desgaste: Math.max(0, Math.min(100, numero(m.desgaste))),
+      quebrada: !!m.quebrada,
       produto: typeof m.produto === 'string' ? m.produto : null,
     });
   }
@@ -89,6 +105,8 @@ export function lerSave(texto, { limite = 11.5, capacidade = 8, maxFuncionarios 
     estoque: lista(dados.estoque).filter((e) => Array.isArray(e) && typeof e[0] === 'string'),
     escolha: dados.escolha ?? {},
     contratos: dados.contratos ?? null,
+    energia: dados.energia ?? null,
+    refugo: Math.max(0, Math.floor(numero(dados.refugo))),
     caixas: Math.max(0, Math.floor(numero(dados.caixas))),
     relogio: Math.max(0, numero(dados.relogio)), // segundos de jogo desde o início do dia 1
     jogador: { x: dentro(dados.jogador?.x, limite), z: dentro(dados.jogador?.z ?? 4, limite) },

@@ -6,9 +6,11 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
-**v0.5.1 — Visual do Distrito.** A oficina virou um prédio de verdade, o terreno ganhou piso, faixas, cerca, doca e van, as máquinas e esteiras têm modelos e animação, o dia vira noite com luzes acendendo, a câmera gira e dá zoom, e o HUD foi redesenhado.
+**v0.6 — Qualidade, manutenção e energia.** As máquinas se desgastam, fazem caixas com defeito e podem quebrar; a inspeção separa os defeitos; a linha consome energia, com conta diária e corte se a conta não for paga.
 
-A versão de regras mais recente é a **v0.5 — Clientes, contratos e reputação.** Clientes do bairro oferecem contratos com uma caixa exata, quantidade, pagamento e prazo. Entregar no prazo aumenta a reputação, que libera clientes maiores e contratos mais bem pagos; atrasar custa multa e reputação.
+Antes dela veio a **v0.5.1 — Visual do Distrito.** A oficina virou um prédio de verdade, o terreno ganhou piso, faixas, cerca, doca e van, as máquinas e esteiras têm modelos e animação, o dia vira noite com luzes acendendo, a câmera gira e dá zoom, e o HUD foi redesenhado.
+
+A **v0.5 — Clientes, contratos e reputação** trouxe os contratos: clientes do bairro oferecem contratos com uma caixa exata, quantidade, pagamento e prazo. Entregar no prazo aumenta a reputação, que libera clientes maiores e contratos mais bem pagos; atrasar custa multa e reputação.
 
 O que já dá para jogar:
 
@@ -20,6 +22,7 @@ O que já dá para jogar:
 - Ganhar reputação para liberar clientes maiores.
 - Contratar até 3 funcionários que produzem e levam caixas ao estoque sozinhos.
 - Ligar esteiras e automatizar máquinas.
+- Cuidar da manutenção, inspecionar a qualidade e pagar a conta de luz.
 - Vencer a campanha com R$ 1.000 em vendas.
 - Continuar de onde parou: o jogo salva sozinho no navegador.
 
@@ -33,6 +36,8 @@ O que já dá para jogar:
 | R | Levar a saída da máquina próxima ao estoque |
 | V | Na expedição: entregar os contratos que o estoque cobre; sem contrato pronto, vender o estoque que nenhum contrato pediu |
 | 1, 2, 3 | Aceitar a oferta de contrato nessa posição |
+| K | Perto da máquina: manutenção preventiva (até R$ 30) ou conserto, se estiver quebrada (R$ 60) |
+| I | Perto do estoque: inspecionar tudo (R$ 1 a cada 5 caixas). Perto de máquina com esteira: instalar inspetor automático (R$ 80) |
 | T, C, M | Trocar tamanho, cor e material da próxima caixa |
 | F | Contratar funcionário (R$ 80, até 3) |
 | L | Ligar esteira da máquina próxima até o estoque (R$ 40) |
@@ -52,6 +57,8 @@ O quadrado no chão à frente do jogador mostra onde a próxima máquina vai fic
 | Verde | Automática, produzindo |
 | Amarela | Automática, sem dinheiro para papelão |
 | Vermelha | Saída cheia (8 caixas): a máquina parou. Ligue uma esteira ou recolha com R |
+| Laranja piscando, com fumaça | Quebrada: aperte K perto dela para consertar |
+| Azul | Sem energia: a conta de luz está atrasada |
 
 ## Contratos
 
@@ -71,6 +78,16 @@ O painel à direita mostra a reputação, até 3 ofertas e os contratos em andam
 | Loja Virtual Clique | 50 | Médias e grandes reforçadas, qualquer cor |
 | Rede Varejo Centro | 70 | Médias e grandes em grande quantidade |
 
+## Qualidade, manutenção e energia
+
+- **Desgaste:** cada caixa desgasta a máquina em 2%. O rótulo sobre a máquina mostra o desgaste a partir de 50%.
+- **Defeitos:** a chance vai de 3% com a máquina nova a 28% com ela gasta. A caixa defeituosa sai mais escura e torta.
+- **Quebra:** acima de 70% de desgaste a máquina pode quebrar; em 100% ela quebra com certeza. Quebrada, não produz até o conserto.
+- **Manutenção (K):** zera o desgaste. A preventiva custa 30% do desgaste (de R$ 5 a R$ 30); o conserto, R$ 60.
+- **Inspeção (I):** no estoque, separa as defeituosas para a caçamba de refugo. Na esteira, o inspetor automático faz isso sozinho.
+- **Devoluções:** caixa com defeito entregue em contrato volta. O cliente não paga por ela e a reputação cai 2 pontos por caixa (até 10). Na venda avulsa ela vale metade.
+- **Energia:** máquina automática produzindo, esteira andando e máquina parada consomem energia. A tarifa é noturna das 22h às 6h (×0,6), de pico das 18h às 21h (×1,5) e normal no resto do dia. A conta do dia é cobrada à meia-noite; se faltar dinheiro, a dívida corta a energia da linha automática até ser paga.
+
 ## Visual
 
 - **Terreno:** piso de concreto em placas, faixas de circulação amarelas, área de carga zebrada, cerca com portão e postes de luz.
@@ -84,7 +101,7 @@ O painel à direita mostra a reputação, até 3 ofertas e os contratos em andam
 
 ## Salvamento
 
-O jogo salva sozinho a cada 5 segundos e ao fechar ou trocar de aba. Ficam guardados o dinheiro, as vendas, a reputação, as ofertas e os contratos com o tempo que falta, o estoque, a caixa escolhida no catálogo, as máquinas (com saída, esteira e automação), os funcionários e a posição do jogador. O save fica no navegador de quem joga; outro navegador ou aparelho começa do zero. Partidas salvas antes da v0.5 abrem normalmente: os pedidos cumpridos viram reputação.
+O jogo salva sozinho a cada 5 segundos e ao fechar ou trocar de aba. Ficam guardados o dinheiro, as vendas, a conta de luz, o refugo, a reputação, as ofertas e os contratos com o tempo que falta, o estoque, a caixa escolhida no catálogo, as máquinas (com saída, defeitos, desgaste, esteira, inspetor e automação), os funcionários e a posição do jogador. O save fica no navegador de quem joga; outro navegador ou aparelho começa do zero. Partidas salvas antes da v0.5 abrem normalmente: os pedidos cumpridos viram reputação.
 
 ## Como rodar
 
@@ -98,11 +115,12 @@ Depois abra `http://localhost:8000`.
 
 ## Testes
 
-As regras da linha automática, dos contratos, das rotas de esteira e do salvamento não dependem do Three.js e rodam no Node 18 ou mais novo:
+As regras da linha automática, dos contratos, da qualidade e energia, das rotas de esteira e do salvamento não dependem do Three.js e rodam no Node 18 ou mais novo:
 
 ```bash
 node testes/automacao.test.mjs
 node testes/contratos.test.mjs
+node testes/qualidade.test.mjs
 node testes/rotas.test.mjs
 node testes/salvamento.test.mjs
 ```
@@ -120,7 +138,7 @@ node testes/salvamento.test.mjs
 | `js/visual/camera.js` | Câmera que segue o jogador, gira e dá zoom |
 | `js/visual/terreno.js` | Piso, faixas, cerca, postes e cursor de posicionamento |
 | `js/visual/oficina.js` | Prédio da oficina |
-| `js/visual/estacoes.js` | Prateleira do estoque, doca de expedição, van e modelo de caixa |
+| `js/visual/estacoes.js` | Prateleira do estoque, doca de expedição, van, caçamba de refugo e modelo de caixa |
 | `js/visual/pessoa.js` | Modelo e animação do jogador e dos funcionários |
 | `js/visual/rotulos.js` | Rótulos que acompanham pontos do mundo e ganhos flutuantes |
 | `js/grade.js` | Limites do terreno e obstáculos da grade |
@@ -129,6 +147,8 @@ node testes/salvamento.test.mjs
 | `js/rotas.js` | Rotas em L das esteiras, contornando oficina, doca e van |
 | `js/automacao.js` | Regras da linha automática: produção sozinha, limite da saída e vazão da esteira |
 | `js/contratos.js` | Clientes, ofertas, contratos, prazos, multas e reputação |
+| `js/qualidade.js` | Desgaste, defeitos, quebra, manutenção e inspeção |
+| `js/energia.js` | Consumo, tarifas por hora, conta diária, dívida e corte |
 | `js/salvamento.js` | Save versionado no navegador: montar, validar, migrar, gravar e apagar |
 | `js/catalogo.js` | Tamanhos, cores e materiais das caixas |
 | `js/estoque.js` | Estoque separado por produto, vendas e retirada de pedidos |

@@ -13,6 +13,7 @@ import {
   posicionarNaEsteira,
   animarEsteiras,
   animarMaquina,
+  adicionarInspetor,
 } from './producao.js';
 import {
   CAPACIDADE_SAIDA,
@@ -32,6 +33,8 @@ import {
   retirar,
   exportarEstoque,
   importarEstoque,
+  defeituosasNoEstoque,
+  separarDefeituosas,
 } from './estoque.js';
 import { apagar, carregar, gravar, montarSave } from './salvamento.js';
 import {
@@ -47,13 +50,30 @@ import {
   novoQuadro,
 } from './contratos.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
+import {
+  CUSTO_INSPETOR,
+  custoInspecaoManual,
+  custoManutencao,
+  fazerManutencao,
+  registrarProducao,
+} from './qualidade.js';
+import {
+  consumir,
+  energiaCortada,
+  exportarEnergia,
+  importarEnergia,
+  novaEnergia,
+  pagarDivida,
+  tarifa,
+  virarDia,
+} from './energia.js';
 import { criarCenario } from './cenario.js';
-import { criarAmbiente } from './visual/ambiente.js';
+import { DURACAO_DIA, criarAmbiente } from './visual/ambiente.js';
 import { criarCameraJogo } from './visual/camera.js';
 import { criarRotulos } from './visual/rotulos.js';
 import { criarOficina } from './visual/oficina.js';
 import { criarCursor, criarTerreno } from './visual/terreno.js';
-import { criarExpedicao, criarPrateleira, criarVan } from './visual/estacoes.js';
+import { criarCacamba, criarExpedicao, criarPrateleira, criarVan } from './visual/estacoes.js';
 import {
   CUSTO_ESTEIRA,
   CUSTO_FUNCIONARIO,
@@ -89,6 +109,8 @@ const elRelogio = document.getElementById('relogio');
 const elBarraMeta = document.getElementById('barra-meta');
 const elCorProduto = document.getElementById('cor-produto');
 const elAjuda = document.getElementById('ajuda');
+const elEnergia = document.getElementById('energia');
+const elQualidade = document.getElementById('qualidade');
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -118,6 +140,13 @@ registrarObstaculo(EXPEDICAO.x - 0.9, EXPEDICAO.x + 0.9, 7.85, 12.2);
 // Prateleira do estoque: onde os funcionários e as esteiras deixam as caixas.
 const prateleira = criarPrateleira(cena, ESTOQUE_PONTO.x, ESTOQUE_PONTO.z);
 registrarObstaculo(ESTOQUE_PONTO.x - 1, ESTOQUE_PONTO.x + 1, ESTOQUE_PONTO.z - 0.5, ESTOQUE_PONTO.z + 0.5);
+
+// Caçamba de refugo ao lado do estoque: destino das caixas defeituosas separadas na inspeção (v0.6).
+const CACAMBA = { x: -10.6, z: -6.95 };
+const cacamba = criarCacamba(cena, CACAMBA.x, CACAMBA.z);
+registrarObstaculo(CACAMBA.x - 0.45, CACAMBA.x + 0.45, CACAMBA.z - 0.45, CACAMBA.z + 0.45);
+let refugo = 0;
+let energia = novaEnergia();
 
 const rotulos = criarRotulos(document.getElementById('rotulos'), camera);
 rotulos.adicionar({ x: ESTOQUE_PONTO.x, y: 2.8, z: ESTOQUE_PONTO.z }, { texto: () => `ESTOQUE · ${totalNoEstoque()}`, classe: 'estacao' });
@@ -160,6 +189,12 @@ function atualizarPlacar() {
   elBarraMeta.style.width = `${Math.min(100, (getVendido() / META_VENDAS) * 100)}%`;
   elFuncionarios.textContent = funcionarios.length;
   elLinha.textContent = resumoLinha();
+  cacamba.atualizar(refugo);
+  const defeitos = defeituosasNoEstoque();
+  elQualidade.textContent = defeitos
+    ? `${defeitos} caixa(s) com defeito no estoque · I no estoque inspeciona`
+    : `Estoque sem defeitos · refugo: ${refugo}`;
+  elQualidade.className = defeitos ? 'alerta' : '';
   prateleira.atualizar(
     exportarEstoque().map(([chave, quantidade]) => ({ cor: produtoPorChave(chave)?.cor ?? 0xc89b5a, quantidade })),
   );
@@ -169,14 +204,17 @@ function atualizarPlacar() {
 function resumoLinha() {
   if (maquinas.length === 0) return 'sem máquinas';
   const podePagar = getDinheiro() >= CUSTO_PRODUCAO;
-  const conta = { produzindo: 0, 'sem-dinheiro': 0, cheia: 0 };
+  const semEnergia = energiaCortada(energia);
+  const conta = { produzindo: 0, 'sem-dinheiro': 0, cheia: 0, quebrada: 0, 'sem-energia': 0 };
   for (const m of maquinas) {
-    const estado = estadoMaquina(m, podePagar);
+    const estado = estadoMaquina(m, podePagar, semEnergia);
     if (estado in conta) conta[estado] += 1;
   }
   const automaticas = maquinas.filter((m) => m.automatica).length;
   const partes = [`${automaticas} automática(s)`];
   if (conta.produzindo) partes.push(`${conta.produzindo} produzindo`);
+  if (conta.quebrada) partes.push(`${conta.quebrada} quebrada(s)`);
+  if (conta['sem-energia']) partes.push(`${conta['sem-energia']} sem energia`);
   if (conta.cheia) partes.push(`${conta.cheia} parada(s): saída cheia`);
   if (conta['sem-dinheiro']) partes.push(`${conta['sem-dinheiro']} sem papelão`);
   return partes.join(' · ');
@@ -186,7 +224,8 @@ function resumoLinha() {
 let assinaturaLinha = '';
 function atualizarLuzes() {
   const podePagar = getDinheiro() >= CUSTO_PRODUCAO;
-  const estados = maquinas.map((m) => estadoMaquina(m, podePagar));
+  const semEnergia = energiaCortada(energia);
+  const estados = maquinas.map((m) => estadoMaquina(m, podePagar, semEnergia));
   maquinas.forEach((m, i) => mostrarEstado(m, estados[i]));
   const assinatura = estados.join(',');
   if (assinatura !== assinaturaLinha) {
@@ -195,22 +234,31 @@ function atualizarLuzes() {
   }
 }
 
+// Fabrica uma caixa na máquina: paga o papelão, desgasta a máquina e sorteia defeito e quebra (v0.6).
+// Usada pela produção manual (E), pelos funcionários e pelas máquinas automáticas.
+function fabricar(maquina, produto) {
+  if (maquina.quebrada || saidaCheia(maquina) || !pagar(CUSTO_PRODUCAO)) return false;
+  const { defeito, quebrou } = registrarProducao(maquina);
+  cena.add(criarCaixa(maquina, produto, defeito));
+  caixas += 1;
+  if (quebrou) mensagem(`Uma máquina quebrou! Chegue perto e aperte K para consertar (R$ ${custoManutencao(maquina)}).`);
+  atualizarPlacar();
+  return true;
+}
+
 // Ações que os funcionários usam na cena: produzir, recolher a saída e depositar no estoque.
 const acoesFuncionario = {
   podeProduzir: () => getDinheiro() >= CUSTO_PRODUCAO,
   produzir(maquina) {
-    if (saidaCheia(maquina) || !pagar(CUSTO_PRODUCAO)) return;
-    cena.add(criarCaixa(maquina, produtoAtual()));
-    caixas += 1;
-    atualizarPlacar();
+    fabricar(maquina, produtoAtual());
   },
   recolher(maquina) {
     const levadas = maquina.saida.splice(0);
     for (const { malha } of levadas) cena.remove(malha);
-    return levadas.map((item) => item.produto);
+    return levadas.map(({ produto, defeito }) => ({ produto, defeito }));
   },
-  depositar(produtos) {
-    for (const produto of produtos) guardarNoEstoque(produto);
+  depositar(itens) {
+    for (const { produto, defeito } of itens) guardarNoEstoque(produto, 1, defeito ? 1 : 0);
     atualizarPlacar();
   },
 };
@@ -239,10 +287,13 @@ function ligarEsteira() {
 // Linha automática: máquinas automáticas produzem e as esteiras levam as caixas, uma a uma, ao estoque.
 const acoesLinha = {
   podePagar: () => getDinheiro() >= CUSTO_PRODUCAO,
+  semEnergia: () => energiaCortada(energia),
   produzir(maquina, produto) {
-    if (!pagar(CUSTO_PRODUCAO)) return;
-    cena.add(criarCaixa(maquina, produto));
-    caixas += 1;
+    fabricar(maquina, produto);
+  },
+  descartar(item) {
+    cena.remove(item.malha);
+    refugo += 1;
     atualizarPlacar();
   },
   posicionar(item, maquina, progresso) {
@@ -250,7 +301,7 @@ const acoesLinha = {
   },
   entregar(item) {
     cena.remove(item.malha);
-    guardarNoEstoque(item.produto);
+    guardarNoEstoque(item.produto, 1, item.defeito ? 1 : 0);
     atualizarPlacar();
   },
 };
@@ -298,10 +349,84 @@ function contratarFuncionario() {
   mensagem('Funcionário contratado.');
 }
 
+// ===== Manutenção e inspeção (v0.6) =====
+
+// K perto da máquina: manutenção preventiva (zera o desgaste) ou conserto, se estiver quebrada.
+function manutencao() {
+  const maquina = maquinaProxima(jogador.position, maquinas);
+  if (!maquina) {
+    mensagem('Chegue perto de uma máquina para fazer manutenção.');
+    return;
+  }
+  if (!maquina.quebrada && maquina.desgaste < 1) {
+    mensagem('Esta máquina está nova. Ainda não precisa de manutenção.');
+    return;
+  }
+  const custo = custoManutencao(maquina);
+  if (!pagar(custo)) {
+    mensagem(`${maquina.quebrada ? 'Conserto' : 'Manutenção'} custa R$ ${custo}. Você tem ${reais(getDinheiro())}.`);
+    return;
+  }
+  const estavaQuebrada = maquina.quebrada;
+  fazerManutencao(maquina);
+  atualizarPlacar();
+  mensagem(estavaQuebrada ? `Máquina consertada por R$ ${custo}.` : `Manutenção feita por R$ ${custo}: desgaste zerado.`);
+}
+
+// I perto do estoque: inspeção manual de todo o estoque. Perto de uma máquina com esteira:
+// instala o inspetor automático, que separa os defeitos antes de chegarem ao estoque.
+function inspecionar() {
+  const p = jogador.position;
+  if (Math.hypot(p.x - ESTOQUE_PONTO.x, p.z - ESTOQUE_PONTO.z) < 2.4) {
+    const total = totalNoEstoque();
+    if (total === 0) {
+      mensagem('O estoque está vazio.');
+      return;
+    }
+    const custo = custoInspecaoManual(total);
+    if (!pagar(custo)) {
+      mensagem(`Inspecionar ${total} caixas custa R$ ${custo}. Você tem ${reais(getDinheiro())}.`);
+      return;
+    }
+    const separadas = separarDefeituosas();
+    refugo += separadas;
+    atualizarPlacar();
+    mensagem(separadas ? `Inspeção (R$ ${custo}): ${separadas} caixa(s) com defeito foram para o refugo.` : `Inspeção (R$ ${custo}): nenhum defeito.`);
+    return;
+  }
+  const maquina = maquinaProxima(p, maquinas);
+  if (!maquina) {
+    mensagem('Aperte I perto do estoque para inspecionar, ou perto de uma máquina com esteira para instalar o inspetor.');
+    return;
+  }
+  if (!maquina.esteira) {
+    mensagem('O inspetor automático fica na esteira. Ligue uma esteira (L) primeiro.');
+    return;
+  }
+  if (maquina.inspecao) {
+    mensagem('Esta esteira já tem inspetor.');
+    return;
+  }
+  if (!pagar(CUSTO_INSPETOR)) {
+    mensagem(`Inspetor custa R$ ${CUSTO_INSPETOR}. Você tem ${reais(getDinheiro())}.`);
+    return;
+  }
+  maquina.inspecao = true;
+  adicionarInspetor(maquina);
+  atualizarPlacar();
+  mensagem('Inspetor instalado: caixas com defeito vão direto para o refugo.');
+}
+
 // Rótulo sobre a máquina: caixas na saída, com a cor da situação.
 function rotularMaquina(maquina) {
   rotulos.adicionar({ x: maquina.x, y: 2.15, z: maquina.z }, {
-    texto: () => (maquina.saida.length ? `${maquina.saida.length}/${CAPACIDADE_SAIDA}` : ''),
+    texto: () => {
+      if (maquina.quebrada) return `QUEBRADA · K conserta (R$ ${custoManutencao(maquina)})`;
+      const partes = [];
+      if (maquina.saida.length) partes.push(`${maquina.saida.length}/${CAPACIDADE_SAIDA}`);
+      if (maquina.desgaste >= 50) partes.push(`desgaste ${Math.round(maquina.desgaste)}%`);
+      return partes.join(' · ');
+    },
     classe: () => `maquina ${maquina.luz.userData.estado ?? 'manual'}`,
   });
 }
@@ -336,18 +461,20 @@ function produzirCaixa() {
     mensagem('Chegue perto de uma máquina para produzir.');
     return;
   }
+  if (maquina.quebrada) {
+    mensagem(`Máquina quebrada. Aperte K para consertar (R$ ${custoManutencao(maquina)}).`);
+    return;
+  }
   if (saidaCheia(maquina)) {
     mensagem(`Saída cheia (${CAPACIDADE_SAIDA} caixas). Recolha com R ou ligue uma esteira.`);
     return;
   }
-  if (!pagar(CUSTO_PRODUCAO)) {
+  if (getDinheiro() < CUSTO_PRODUCAO) {
     mensagem(`Sem dinheiro para papelão (R$ ${CUSTO_PRODUCAO}).`);
     return;
   }
-  cena.add(criarCaixa(maquina, produtoAtual()));
-  caixas += 1;
-  atualizarPlacar();
-  mensagem('Caixa produzida.');
+  fabricar(maquina, produtoAtual());
+  if (!maquina.quebrada) mensagem(maquina.saida.at(-1)?.defeito ? 'Caixa produzida, mas saiu com defeito.' : 'Caixa produzida.');
 }
 
 // Leva a saída da máquina mais próxima para o estoque, separado da produção.
@@ -362,9 +489,9 @@ function recolherSaida() {
     return;
   }
   const levadas = maquina.saida.splice(0);
-  for (const { malha, produto } of levadas) {
+  for (const { malha, produto, defeito } of levadas) {
     cena.remove(malha);
-    guardarNoEstoque(produto);
+    guardarNoEstoque(produto, 1, defeito ? 1 : 0);
   }
   atualizarPlacar();
   mensagem(`${levadas.length} caixa(s) levada(s) ao estoque.`);
@@ -393,9 +520,15 @@ function venderNaExpedicao() {
   }
   const entregues = entregar(quadro, { quantidade: quantidadeDe, retirar });
   if (entregues.length > 0) {
-    const total = entregues.reduce((t, c) => t + c.pagamento, 0);
+    const total = entregues.reduce((t, c) => t + c.recebido, 0);
+    const devolvidas = entregues.reduce((t, c) => t + c.devolvidas, 0);
     const nomes = entregues.map((c) => nomeCliente(c.cliente)).join(', ');
-    registrarVenda(total, `Contrato entregue (${nomes}): R$ ${total}. Reputação ${quadro.reputacao}.`);
+    registrarVenda(
+      total,
+      devolvidas
+        ? `Contrato entregue (${nomes}), mas ${devolvidas} caixa(s) com defeito voltaram: R$ ${total}. Reputação ${quadro.reputacao}.`
+        : `Contrato entregue (${nomes}): R$ ${total}. Reputação ${quadro.reputacao}.`,
+    );
     mostrarContratos();
     return;
   }
@@ -496,6 +629,8 @@ const teclasDeAcao = {
   KeyF: contratarFuncionario,
   KeyL: ligarEsteira,
   KeyU: automatizarMaquina,
+  KeyK: manutencao,
+  KeyI: inspecionar,
   KeyN: novoJogo,
   KeyQ: () => cameraJogo.girar(-1),
   KeyZ: () => cameraJogo.girar(1),
@@ -530,6 +665,49 @@ function ajustarTamanho() {
 }
 window.addEventListener('resize', ajustarTamanho);
 
+// ===== Energia (v0.6) =====
+
+const reaisCentavos = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+let textoEnergia = '';
+
+// Soma o consumo da linha, cobra a conta na virada do dia e paga a dívida assim que entra dinheiro.
+function avancarEnergia(dt) {
+  const cortada = energiaCortada(energia);
+  const carga = { produzindo: 0, esteiras: 0, paradas: 0 };
+  for (const m of maquinas) {
+    if (m.quebrada) continue;
+    if (!cortada && m.luz.userData.estado === 'produzindo') carga.produzindo += 1;
+    else carga.paradas += 1;
+    if (!cortada && m.esteira && (m.saida.length || m.transito?.length)) carga.esteiras += 1;
+  }
+  consumir(energia, carga, (dt * 24) / DURACAO_DIA, ambiente.hora());
+
+  const virada = virarDia(energia, ambiente.dia(), cobrarMulta);
+  if (virada && virada.fatura > 0) {
+    mensagem(
+      energiaCortada(energia)
+        ? `Conta de luz de ${reaisCentavos(virada.fatura)} sem pagar: energia cortada até quitar a dívida.`
+        : `Conta de luz do dia paga: ${reaisCentavos(virada.fatura)}.`,
+    );
+    atualizarPlacar();
+  }
+  if (energiaCortada(energia) && getDinheiro() > 0) {
+    pagarDivida(energia, cobrarMulta);
+    if (!energiaCortada(energia)) mensagem('Dívida de energia paga. A linha voltou a funcionar.');
+    atualizarPlacar();
+  }
+
+  const t = tarifa(ambiente.hora());
+  const texto = energiaCortada(energia)
+    ? `CORTADA · dívida de ${reaisCentavos(energia.divida)}`
+    : `${reaisCentavos(energia.contaDia)} hoje · tarifa ${t.nome}${t.fator !== 1 ? ` (×${String(t.fator).replace('.', ',')})` : ''}`;
+  if (texto !== textoEnergia) {
+    textoEnergia = texto;
+    elEnergia.textContent = texto;
+    elEnergia.className = energiaCortada(energia) ? 'alerta' : t.nome === 'pico' ? 'aviso' : '';
+  }
+}
+
 // Partes só visuais: dia e noite, câmera, esteiras, máquinas, cursor, rótulos e relógio.
 let textoRelogio = '';
 function animarCena(dt) {
@@ -562,6 +740,8 @@ function salvarJogo() {
       contratos: exportarQuadro(quadro),
       caixas,
       relogio: ambiente.exportar(),
+      energia: exportarEnergia(energia),
+      refugo,
       jogador: jogador.position,
       maquinas,
       funcionarios: funcionarios.map((f) => f.malha.position),
@@ -579,6 +759,8 @@ function restaurarJogo() {
   quadro = importarQuadro(save.contratos, produtoPorChave);
   caixas = save.caixas;
   ambiente.importar(save.relogio);
+  energia = importarEnergia(save.energia);
+  refugo = save.refugo;
   for (const dados of save.maquinas) {
     if (!cabeAqui(dados.x, dados.z)) continue;
     const maquina = criarMaquina(dados.x, dados.z);
@@ -586,10 +768,12 @@ function restaurarJogo() {
     maquinas.push(maquina);
     rotularMaquina(maquina);
     registrarObstaculo(dados.x - 0.45, dados.x + 0.45, dados.z - 0.45, dados.z + 0.45);
-    for (const chave of dados.saida) {
+    for (const { chave, defeito } of dados.saida) {
       const produto = produtoPorChave(chave);
-      if (produto) cena.add(criarCaixa(maquina, produto));
+      if (produto) cena.add(criarCaixa(maquina, produto, defeito));
     }
+    maquina.desgaste = dados.desgaste;
+    maquina.quebrada = dados.quebrada;
     if (dados.esteira) {
       maquina.esteira = criarEsteira(maquina, ESTOQUE_PONTO);
       cena.add(maquina.esteira);
@@ -598,6 +782,10 @@ function restaurarJogo() {
     if (dados.automatica && produto) {
       programar(maquina, produto);
       marcarAutomatica(maquina);
+    }
+    if (dados.inspecao && maquina.esteira) {
+      maquina.inspecao = true;
+      adicionarInspetor(maquina);
     }
   }
   for (const pos of save.funcionarios) {
@@ -641,6 +829,7 @@ renderer.setAnimationLoop(() => {
   for (const f of funcionarios) atualizarFuncionario(f, dt, maquinas, acoesFuncionario);
   atualizarAutomacao(maquinas, dt, acoesLinha);
   avancarContratos(dt);
+  avancarEnergia(dt);
   atualizarLuzes();
   animarCena(dt);
   renderer.render(cena, camera);

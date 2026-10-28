@@ -153,6 +153,7 @@ Decididas em 2026-10-27, antes da v0.1:
 | v0.4 | Concluída | Esteiras (tecla L) e máquinas automáticas (tecla U). A linha roda sem o jogador e os gargalos aparecem na luz das máquinas. |
 | v0.5 | Concluída | Seis tipos de clientes oferecem contratos com produto exato, quantidade, pagamento e prazo. Reputação de 0 a 100 libera clientes e aumenta pagamentos. Substitui o pedido genérico da primeira versão jogável. |
 | v0.5.1 | Concluída | Visual do Distrito: modelos de oficina, máquinas, esteiras, estoque, doca e van; terreno cercado; ciclo de dia e noite; câmera com rotação e zoom; HUD e rótulos redesenhados. Sem mudança de regras. |
+| v0.6 | Concluída | Desgaste, defeitos e quebra das máquinas; manutenção (K); inspeção manual e inspetor automático (I); devoluções em contratos; energia com tarifa por hora, conta diária e corte. |
 | Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
@@ -202,14 +203,36 @@ Feita antes da v0.6 para fixar o estilo enquanto o cenário ainda é pequeno. A 
 - **Dia e noite:** 6 minutos de jogo por dia, começando às 7h. A hora entra no save (campo `relogio`, opcional, sem mudar a versão do save).
 - **HUD:** barra superior com dinheiro, progresso da meta, estoque, produção, máquinas, equipe e relógio; painel de produção à esquerda; avisos no centro; contratos à direita; controles recolhíveis (H).
 
+### v0.6 em detalhe
+
+| Regra | Valor |
+| --- | --- |
+| Desgaste por caixa | 2% |
+| Chance de defeito | 3% + 0,25% por ponto de desgaste (máximo 28%) |
+| Chance de quebra por caixa | 0 abaixo de 70%; (desgaste − 70)% de 70 a 99%; certa em 100% |
+| Manutenção preventiva | 30% do desgaste em R$, entre R$ 5 e R$ 30 |
+| Conserto | R$ 60 |
+| Inspeção manual | R$ 1 a cada 5 caixas do estoque |
+| Inspetor automático | R$ 80 por esteira |
+| Devolução | cliente não paga a caixa; −2 de reputação por caixa, até −10 |
+| Venda avulsa de defeituosa | 50% do preço |
+| Consumo (tarifa normal) | R$ 1,00/h por máquina produzindo, R$ 0,35/h por esteira andando, R$ 0,08/h por máquina parada |
+| Tarifa | noturna 22h–6h ×0,6; pico 18h–21h ×1,5; normal ×1 |
+| Conta | cobrada à meia-noite; o que faltar vira dívida e corta a energia até ser paga |
+
+- Uma hora de jogo dura 15 segundos (6 minutos por dia). Uma máquina automática produzindo o dia todo gasta cerca de R$ 24 de energia.
+- Sem inspeção, as caixas defeituosas vão misturadas ao estoque e saem na mesma proporção quando um contrato é entregue.
+- **Critério de pronto atendido:** defeitos separados na inspeção, máquina quebra e exige manutenção, consumo visível no HUD. Verificado em `testes/qualidade.test.mjs` e jogando no navegador.
+
 ### Salvamento em detalhe
 
 - **Onde:** `localStorage` do navegador, na chave `imperio-industrial-2:save`. Cada navegador tem o seu save.
 - **Quando:** a cada 5 segundos, ao fechar a página e ao trocar de aba.
 - **O que:** relógio do dia, economia (dinheiro e vendido), quadro de contratos (reputação, ofertas, contratos com o tempo restante, cumpridos e vencidos), estoque por produto, escolha do catálogo, total de caixas produzidas, máquinas (posição, saída, esteira, automação e produto programado), posição dos funcionários e do jogador.
 - **Produtos:** gravados só pela chave (por exemplo `M-1-0`) e reconstruídos pelo catálogo ao carregar. Se um preço mudar no catálogo, o save antigo usa o preço novo.
-- **Versão:** o save tem o campo `versao` (hoje 2). Uma mudança de formato aumenta a versão e ganha uma função em `MIGRACOES`, que converte o save antigo. Um save de versão mais nova que o jogo não é carregado.
+- **Versão:** o save tem o campo `versao` (hoje 3). Uma mudança de formato aumenta a versão e ganha uma função em `MIGRACOES`, que converte o save antigo. Um save de versão mais nova que o jogo não é carregado.
 - **Migração 1 → 2 (v0.5):** o pedido genérico é descartado; os pedidos cumpridos viram contratos cumpridos e dão 5 de reputação cada, a partir de 20.
+- **Migração 2 → 3 (v0.6):** máquinas começam sem desgaste, estoque sem defeitos, refugo zerado e conta de luz nova. Caixas com defeito na saída de uma máquina são gravadas com `*` no fim da chave, e o estoque grava `[chave, quantidade, defeituosas]`.
 - **Validação:** posições fora do terreno são trazidas para dentro, máquinas repetidas na mesma célula são descartadas, a saída respeita o limite de 8 caixas e os funcionários, o limite de 3. Se o armazenamento estiver bloqueado, o jogo roda sem salvar.
 - **Esteiras:** caixas que estavam andando na esteira voltam para a saída da máquina ao carregar, para nenhuma se perder.
 - **Testes:** `testes/salvamento.test.mjs`.
@@ -239,7 +262,7 @@ A cor muda só a aparência. Uma máquina automática produz 20 caixas por minut
 
 ## Próximo passo
 
-v0.6 — Qualidade, manutenção e energia: caixas com defeito separadas na inspeção, máquinas que se desgastam e quebram até receberem manutenção, e consumo de energia visível. Os contratos podem passar a exigir qualidade mínima, e devoluções de caixas defeituosas tiram reputação.
+v0.7 — Veículos e mapa de entregas: a van sai da doca com os contratos, percorre uma rota no mapa da cidade e volta. Distância e trânsito passam a contar no prazo, e a frota cresce com vans e caminhões.
 
 ## Riscos
 

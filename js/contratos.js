@@ -10,6 +10,7 @@ export const VALIDADE_OFERTA = 60; // segundos que uma oferta fica disponível
 export const GANHO_REPUTACAO = 5; // entrega no prazo
 export const PERDA_REPUTACAO = 10; // prazo vencido
 export const MULTA = 0.25; // fração do pagamento cobrada se o prazo vencer
+export const PERDA_POR_DEFEITO = 2; // reputação perdida por caixa defeituosa devolvida (v0.6)
 
 // Faixas de reputação: nomes mostrados no HUD.
 export const NIVEIS = [
@@ -43,7 +44,7 @@ export function clientesDisponiveis(reputacao) {
 
 // Estado inicial do quadro de contratos.
 export function novoQuadro() {
-  return { reputacao: REPUTACAO_INICIAL, ofertas: [], ativos: [], cumpridos: 0, vencidos: 0, cronometro: INTERVALO_OFERTA, proximoId: 1 };
+  return { reputacao: REPUTACAO_INICIAL, ofertas: [], ativos: [], cumpridos: 0, vencidos: 0, devolucoes: 0, cronometro: INTERVALO_OFERTA, proximoId: 1 };
 }
 
 // Gera uma oferta de um cliente disponível. produtoPorChave vem do catálogo.
@@ -114,17 +115,27 @@ export function atualizarContratos(quadro, dt, produtoPorChave, rng = Math.rando
 }
 
 // Entrega na expedição os contratos que o estoque já cobre, do prazo mais curto para o mais longo.
-// estoque: { quantidade(chave), retirar(chave, q) }. Devolve os contratos entregues.
+// estoque: { quantidade(chave), retirar(chave, q) → { defeituosas } }.
+// Caixas defeituosas voltam como devolução: o cliente não paga por elas e a reputação cai
+// (2 pontos por caixa, até 10) em vez de subir. Devolve os contratos entregues com
+// recebido (R$ pagos) e devolvidas (caixas com defeito).
 export function entregar(quadro, estoque) {
   const entregues = [];
   const ordem = [...quadro.ativos].sort((a, b) => a.restante - b.restante);
   for (const c of ordem) {
     if (estoque.quantidade(c.chave) < c.quantidade) continue;
-    estoque.retirar(c.chave, c.quantidade);
+    const retirada = estoque.retirar(c.chave, c.quantidade);
+    const devolvidas = retirada?.defeituosas ?? 0;
     quadro.ativos.splice(quadro.ativos.indexOf(c), 1);
     quadro.cumpridos += 1;
-    quadro.reputacao = limitar(quadro.reputacao + GANHO_REPUTACAO);
-    entregues.push(c);
+    if (devolvidas > 0) {
+      quadro.devolucoes = (quadro.devolucoes ?? 0) + devolvidas;
+      quadro.reputacao = limitar(quadro.reputacao - Math.min(PERDA_REPUTACAO, PERDA_POR_DEFEITO * devolvidas));
+    } else {
+      quadro.reputacao = limitar(quadro.reputacao + GANHO_REPUTACAO);
+    }
+    const recebido = Math.round((c.pagamento * (c.quantidade - devolvidas)) / c.quantidade);
+    entregues.push({ ...c, recebido, devolvidas });
   }
   return entregues;
 }
@@ -150,6 +161,7 @@ export function importarQuadro(d, produtoPorChave) {
   q.reputacao = limitar(num(d.reputacao, REPUTACAO_INICIAL));
   q.cumpridos = Math.max(0, Math.floor(num(d.cumpridos, 0)));
   q.vencidos = Math.max(0, Math.floor(num(d.vencidos, 0)));
+  q.devolucoes = Math.max(0, Math.floor(num(d.devolucoes, 0)));
   q.cronometro = Math.max(0, num(d.cronometro, INTERVALO_OFERTA));
   q.ofertas = (Array.isArray(d.ofertas) ? d.ofertas : []).filter(valido).slice(0, MAX_OFERTAS)
     .map((o) => ({ ...o, prazo: Math.max(1, num(o.prazo, 90)), validade: Math.max(1, num(o.validade, VALIDADE_OFERTA)) }));

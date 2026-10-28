@@ -132,3 +132,38 @@ export function criarVan(cena, x, z) {
   cena.add(g);
   return g;
 }
+
+// Caçamba de refugo: recebe as caixas defeituosas separadas na inspeção. atualizar(n) mostra a pilha.
+export function criarCacamba(cena, x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const verde = mat('#3f6b4a', { aspereza: 0.6, metal: 0.4 });
+  bloco(0.9, 0.08, 0.9, verde, 0, 0, 0, g);
+  for (const [w, d, px, pz] of [[0.9, 0.06, 0, 0.42], [0.9, 0.06, 0, -0.42], [0.06, 0.9, 0.42, 0], [0.06, 0.9, -0.42, 0]]) {
+    bloco(w, 0.62, d, verde, px, 0.08, pz, g);
+  }
+  const placa = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.8, 0.2),
+    new THREE.MeshStandardMaterial({ map: texturaPlaca('REFUGO', { fundo: '#2b2f31', fonte: 80 }), roughness: 0.6 }),
+  );
+  placa.position.set(0, 0.45, 0.455);
+  g.add(placa);
+  const pilha = new THREE.Group();
+  g.add(pilha);
+  cena.add(g);
+  let atual = -1;
+  return {
+    atualizar(n) {
+      const mostrar = Math.min(12, n);
+      if (mostrar === atual) return;
+      atual = mostrar;
+      pilha.clear();
+      for (let i = 0; i < mostrar; i++) {
+        const c = modeloCaixa(0.28, 0.2, 0.26, '#6e5634');
+        c.position.set(-0.22 + (i % 3) * 0.22, 0.2 + Math.floor(i / 3) * 0.12, -0.18 + ((i * 5) % 3) * 0.18);
+        c.rotation.set(i * 0.4, i * 1.3, i * 0.2);
+        pilha.add(c);
+      }
+    },
+  };
+}

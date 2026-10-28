@@ -14,6 +14,8 @@ export const CORES_LUZ = {
   produzindo: 0x3cc46a,
   'sem-dinheiro': 0xf2c230,
   cheia: 0xe0453a,
+  quebrada: 0xff7a1a, // pisca, com fumaça saindo da máquina (v0.6)
+  'sem-energia': 0x5b7cff,
 };
 
 // Máquina de montar caixas: gabinete com painel, mesa de aço, prensa com cabeçote laranja
@@ -61,10 +63,24 @@ export function criarMaquina(x, z) {
   cilindro(0.08, 0.03, acoEscuro, -0.36, 1.51, -0.36, malha, 16);
   malha.userData.pistao = pistao;
 
+  // Fumaça da máquina quebrada: bolinhas cinza que sobem em ciclo, escondidas até quebrar.
+  const fumaca = [];
+  for (let i = 0; i < 5; i++) {
+    const bola = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 8, 6),
+      new THREE.MeshStandardMaterial({ color: '#7d8386', transparent: true, opacity: 0.6, depthWrite: false }),
+    );
+    bola.visible = false;
+    malha.add(bola);
+    fumaca.push(bola);
+  }
+  malha.userData.fumaca = fumaca;
+
   // saída: caixas prontas, ainda não levadas ao estoque; esteira: transporte automático até o estoque
   return {
     x, z, malha, luz, saida: [], esteira: null, comprimentoEsteira: 0, transito: [],
     automatica: false, produto: null, cronometroProducao: 0, cronometroEsteira: 0, batida: 0,
+    desgaste: 0, quebrada: false, inspecao: false,
   };
 }
 
@@ -97,7 +113,19 @@ export function marcarAutomatica(maquina) {
 }
 
 // Pistão desce e sobe a cada caixa; braço balança enquanto a máquina automática produz.
+// Quebrada, a luz pisca e sai fumaça.
 export function animarMaquina(maquina, dt, produzindo) {
+  const t = performance.now() / 1000;
+  const fumaca = maquina.malha.userData.fumaca;
+  fumaca.forEach((bola, i) => {
+    bola.visible = maquina.quebrada;
+    if (!maquina.quebrada) return;
+    const fase = (t * 0.6 + i / fumaca.length) % 1;
+    bola.position.set(0.1 + Math.sin(fase * 6 + i) * 0.12, 1.9 + fase * 1.4, -0.1);
+    bola.scale.setScalar(0.6 + fase * 1.6);
+    bola.material.opacity = 0.55 * (1 - fase);
+  });
+  if (maquina.quebrada) maquina.luz.material.emissiveIntensity = Math.sin(t * 10) > 0 ? 2 : 0.2;
   maquina.batida = Math.max(0, maquina.batida - dt * 3);
   const pistao = maquina.malha.userData.pistao;
   pistao.position.y = 1.61 - Math.sin(maquina.batida * Math.PI) * 0.18;
@@ -147,6 +175,28 @@ export function criarEsteira(maquina, destino) {
   return grupo;
 }
 
+// Inspetor automático: pórtico sobre o começo da esteira com um sensor que acende (v0.6).
+export function adicionarInspetor(maquina) {
+  if (!maquina.esteira || maquina.malha.userData.inspetor) return;
+  const [p, q] = maquina.rotaEsteira;
+  const trecho = Math.hypot(q.x - p.x, q.z - p.z) || 1;
+  const d = Math.min(0.9, trecho / 2);
+  const g = new THREE.Group();
+  g.position.set(p.x + ((q.x - p.x) / trecho) * d, 0, p.z + ((q.z - p.z) / trecho) * d);
+  g.rotation.y = -Math.atan2(q.z - p.z, q.x - p.x);
+  const azul = mat(PALETA.petroleoClaro, { aspereza: 0.4, metal: 0.4 });
+  for (const s of [-1, 1]) bloco(0.06, 0.62, 0.06, azul, 0, 0, s * 0.3, g);
+  bloco(0.12, 0.1, 0.68, azul, 0, 0.62, 0, g);
+  const sensor = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.03, 0.5),
+    new THREE.MeshStandardMaterial({ color: '#7dffb0', emissive: new THREE.Color('#3cff8a'), emissiveIntensity: 1.6 }),
+  );
+  sensor.position.y = 0.6;
+  g.add(sensor);
+  maquina.esteira.add(g);
+  maquina.malha.userData.inspetor = g;
+}
+
 // Faz as lonas andarem. A velocidade visual acompanha a velocidade real da esteira (1,5 m/s).
 export function animarEsteiras(dt) {
   for (const t of esteiras) t.offset.x -= dt * 1.5 * 2;
@@ -170,17 +220,20 @@ export function posicionarNaEsteira(malha, maquina, progresso) {
 }
 
 // Cria a caixa do produto sobre a mesa da máquina, empilhando em camadas de 4.
-export function criarCaixa(maquina, produto) {
+// Caixa defeituosa sai mais escura e torta (v0.6).
+export function criarCaixa(maquina, produto, defeito = false) {
   const n = maquina.saida.length;
   const w = 0.36 * produto.escala;
   const h = 0.28 * produto.altura;
-  const malha = modeloCaixa(w, h, w, produto.cor);
+  const cor = defeito ? `#${new THREE.Color(produto.cor).multiplyScalar(0.55).getHexString()}` : produto.cor;
+  const malha = modeloCaixa(w, h, w, cor);
+  if (defeito) malha.rotation.z = 0.12;
   malha.position.set(
     maquina.x + ((n % 2) - 0.5) * 0.4,
     MESA + h / 2 + Math.floor(n / 4) * h,
     maquina.z + 0.12 + (((n >> 1) % 2) - 0.5) * 0.4,
   );
-  maquina.saida.push({ malha, produto });
+  maquina.saida.push({ malha, produto, defeito });
   maquina.batida = 1;
   return malha;
 }

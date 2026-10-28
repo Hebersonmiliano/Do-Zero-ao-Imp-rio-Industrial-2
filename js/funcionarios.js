@@ -23,7 +23,7 @@ function escolherTarefa(f, maquinas, acoes) {
     f.alvo = { pos: { x: comSaida.x, z: comSaida.z + 0.8 }, maquina: comSaida };
     return;
   }
-  const destino = maquinas.find((m) => !m.automatica && !saidaCheia(m));
+  const destino = maquinas.find((m) => !m.automatica && !m.quebrada && !saidaCheia(m));
   if (destino && acoes.podeProduzir()) {
     f.fase = 'produzir';
     f.alvo = { pos: { x: destino.x, z: destino.z + 0.8 }, maquina: destino };
@@ -77,7 +77,7 @@ function executar(f, acoes) {
 
 // Avança o funcionário em dt segundos. acoes é o conjunto de funções da cena (produzir, recolher, depositar).
 export function atualizarFuncionario(f, dt, maquinas, acoes) {
-  mostrarCarga(f.malha, f.carga);
+  mostrarCarga(f.malha, f.carga.map((item) => item.produto ?? item));
   if (f.espera > 0) {
     f.espera -= dt;
     animarPessoa(f.malha, dt, false);

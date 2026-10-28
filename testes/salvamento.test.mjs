@@ -101,15 +101,39 @@ teste('dados estragados são corrigidos ao ler', () => {
   assert.equal(getDinheiro(), 100);
 });
 
-teste('save da versão 1 é migrado para a 2 (contratos)', () => {
+teste('save da versão 1 é migrado até a atual (contratos, qualidade e energia)', () => {
   const v1 = {
     versao: 1, caixas: 9, jogador: { x: 0, z: 4 }, maquinas: [], funcionarios: [], estoque: [], escolha: {},
     economia: { dinheiro: 140, vendido: 300, pedido: { quantidade: 11, bonus: 70 }, pedidosCumpridos: 2 },
   };
   const lido = lerSave(JSON.stringify(v1));
-  assert.equal(lido.versao, 2);
+  assert.equal(lido.versao, 3, 'migra 1 → 2 → 3');
   assert.deepEqual(lido.economia, { dinheiro: 140, vendido: 300 });
+  assert.equal(lido.refugo, 0);
   assert.deepEqual(lido.contratos, { reputacao: 30, cumpridos: 2 });
+});
+
+teste('defeitos, desgaste, inspetor, energia e refugo vão e voltam pelo save (v0.6)', () => {
+  const produto = produtoAtual();
+  const maquina = {
+    x: 3, z: 6, esteira: {}, automatica: false, produto: null, inspecao: true, desgaste: 64, quebrada: true,
+    saida: [{ produto, defeito: true }, { produto, defeito: false }], transito: [],
+  };
+  const save = montarSave({
+    economia: exportarEconomia(), estoque: [['P-0-0', 5, 2]], escolha: {}, caixas: 1,
+    energia: { contaDia: 3.5, divida: 0, dia: 2, ontem: 12 }, refugo: 7,
+    jogador: { x: 0, z: 4 }, maquinas: [maquina], funcionarios: [],
+  });
+  assert.deepEqual(save.maquinas[0].saida, [`${produto.chave}*`, produto.chave]);
+  const lido = lerSave(JSON.stringify(save));
+  const m = lido.maquinas[0];
+  assert.deepEqual(m.saida, [{ chave: produto.chave, defeito: true }, { chave: produto.chave, defeito: false }]);
+  assert.equal(m.desgaste, 64);
+  assert.equal(m.quebrada, true);
+  assert.equal(m.inspecao, true);
+  assert.equal(lido.refugo, 7);
+  assert.deepEqual(lido.energia, { contaDia: 3.5, divida: 0, dia: 2, ontem: 12 });
+  assert.deepEqual(lido.estoque, [['P-0-0', 5, 2]]);
 });
 
 teste('gravar, carregar e apagar no armazenamento', () => {

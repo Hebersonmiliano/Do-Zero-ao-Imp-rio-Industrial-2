@@ -1,10 +1,11 @@
 // Rotas das esteiras (v0.5.1). Só regras: não importa o Three.js.
 
-// Áreas que a esteira contorna: o prédio da oficina, a doca de expedição e a van (com folga).
+// Áreas que a esteira contorna: o prédio da oficina, a doca de expedição, a van e a caçamba (com folga).
 export const BLOQUEIOS = [
   { x0: -2.9, x1: 2.9, z0: -1.9, z1: 1.9 },
   { x0: -9.4, x1: -6.6, z0: 2.6, z1: 5.4 },
   { x0: -9.1, x1: -6.9, z0: 7.6, z1: 12.4 }, // van estacionada
+  { x0: -11.2, x1: -10.0, z0: -7.5, z1: -6.4 }, // caçamba de refugo (v0.6)
 ];
 
 export function cruza(a, b) {
