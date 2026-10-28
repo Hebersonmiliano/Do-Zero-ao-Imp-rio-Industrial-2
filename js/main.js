@@ -1,6 +1,7 @@
 // Cena do Distrito Industrial: terreno, oficina, jogador, máquinas, funcionários, linha automática e contratos.
 // O visual (modelos, luz, câmera e rótulos) fica em js/visual/; aqui ficam as regras ligadas à cena.
 import * as THREE from 'three';
+import { avaliarCampanha } from './campanha.js';
 import { registrarObstaculo, cabeAqui, definirTerrenoExpandido } from './grade.js';
 import { criarJogador, atualizarJogador } from './jogador.js';
 import {
@@ -197,6 +198,19 @@ const maquinas = [];
 const funcionarios = [];
 const LIMITE_FUNCIONARIOS = 3;
 let caixas = 0;
+let etapasConcluidas = 0;
+let painelCampanhaTimer = 0;
+
+function atualizarCampanha() {
+  const estado = avaliarCampanha({ vendido: getVendido(), caixas, funcionarios: funcionarios.length,
+    linhas: maquinas.filter((m) => m.automatica && m.esteira).length,
+    cumpridos: quadro.cumpridos, entregas: frota.concluidas, propriedade: construcao.nivel }, etapasConcluidas);
+  if (estado.concluidas > etapasConcluidas) mensagem(estado.venceu ? 'Campanha do Distrito concluída! Continue expandindo sua fábrica.' : `Etapa concluída! Próximo objetivo: ${estado.etapa.objetivo}.`);
+  etapasConcluidas = estado.concluidas;
+  elMeta.textContent = estado.venceu ? 'Campanha concluída · jogo livre' : `${etapasConcluidas + 1}/8 · ${estado.etapa.nome}`;
+  elBarraMeta.style.width = `${estado.progresso * 100}%`;
+  document.getElementById('objetivo-campanha').textContent = estado.etapa?.objetivo ?? 'Todos os objetivos do Distrito cumpridos';
+}
 
 const teclas = new Set();
 let timerMensagem = null;
@@ -226,8 +240,6 @@ function atualizarPlacar() {
   elEstoque.textContent = totalNoEstoque();
   elDetalheEstoque.textContent = resumoEstoque();
   elDinheiro.textContent = reais(getDinheiro());
-  elMeta.textContent = `${reais(getVendido())} de ${reais(META_VENDAS)}`;
-  elBarraMeta.style.width = `${Math.min(100, (getVendido() / META_VENDAS) * 100)}%`;
   elFuncionarios.textContent = funcionarios.length;
   elLinha.textContent = resumoLinha();
   cacamba.atualizar(refugo);
@@ -577,7 +589,7 @@ function registrarVenda(valor, texto) {
   atualizarPlacar();
   mensagem(
     !jaVencida && venceu()
-      ? `${texto} Meta de R$ ${META_VENDAS} atingida: campanha vencida!`
+      ? `${texto} Marco de R$ ${META_VENDAS} em vendas atingido!`
       : texto,
   );
 }
@@ -1061,6 +1073,7 @@ function montarSaveAtual() {
     contratos: exportarQuadro(quadro),
     frota: exportarFrota(frota),
     construcao: exportarConstrucao(construcao),
+    campanha: etapasConcluidas,
     energia: exportarEnergia(energia),
     refugo,
     caixas,
@@ -1121,6 +1134,7 @@ function restaurarJogo() {
   construcao = importarConstrucao(save.construcao);
   sincronizarConstrucaoVisual();
   caixas = save.caixas;
+  etapasConcluidas = save.campanha ?? 0;
   ambiente.importar(save.relogio);
   energia = importarEnergia(save.energia);
   refugo = save.refugo;
@@ -1193,10 +1207,14 @@ if (restaurarJogo()) {
   document.getElementById('inicio-save').textContent = `Partida salva: ${ambiente.texto()} · ${reais(getDinheiro())} em caixa.`;
 }
 
+let acumuladorSimulacao = 0;
 renderer.setAnimationLoop(() => {
   relogio.update();
-  const dt = Math.min(relogio.getDelta(), 0.05);
-  const analogico = lerEntradaControle(dt);
+  const delta = Math.min(relogio.getDelta(), 0.25);
+  const analogico = lerEntradaControle(delta);
+  acumuladorSimulacao += elInicio.hidden && elMenu.hidden && !document.hidden ? delta : 0;
+  while (acumuladorSimulacao >= 1 / 60) {
+  const dt = 1 / 60;
   atualizarJogador(jogador, teclas, dt, cameraJogo.giro, analogico);
   for (const f of funcionarios) atualizarFuncionario(f, dt, maquinas, acoesFuncionario);
   atualizarAutomacao(maquinas, dt, acoesLinha);
@@ -1205,9 +1223,14 @@ renderer.setAnimationLoop(() => {
   avancarEnergia(dt);
   atualizarLuzes();
   animarCena(dt);
+  acumuladorSimulacao -= dt;
+  painelCampanhaTimer += dt;
+  }
+  if (painelCampanhaTimer >= 0.25) { atualizarCampanha(); painelCampanhaTimer = 0; }
   renderer.render(cena, camera);
 });
 
 atualizarPlacar();
 mostrarContratos();
+atualizarCampanha();
 
