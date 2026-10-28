@@ -692,7 +692,27 @@ mostrarBotaoSom();
 window.addEventListener('pointerdown', () => musica.desbloquear());
 document.addEventListener('visibilitychange', () => musica.pausar(document.visibilityState === 'hidden'));
 
+// Tela inicial: o primeiro clique em Jogar libera som e teclado (necessário dentro do portal).
+const elInicio = document.getElementById('inicio');
+const elBotaoJogar = document.getElementById('botao-jogar');
+function comecar() {
+  if (elInicio.hidden) return;
+  elInicio.hidden = true;
+  musica.desbloquear();
+  window.focus();
+  renderer.domElement.focus?.();
+}
+elBotaoJogar.addEventListener('click', comecar);
+elBotaoJogar.focus();
+
 window.addEventListener('keydown', (e) => {
+  if (!elInicio.hidden) {
+    if (e.code === 'Enter' || e.code === 'Space') {
+      e.preventDefault();
+      comecar();
+    }
+    return;
+  }
   musica.desbloquear();
   teclas.add(e.code);
   if (e.repeat) return;
@@ -877,7 +897,10 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && salvarAoSair) salvarJogo();
 });
 
-if (restaurarJogo()) mensagem('Progresso carregado.');
+if (restaurarJogo()) {
+  elBotaoJogar.textContent = 'Continuar';
+  document.getElementById('inicio-save').textContent = `Partida salva: ${ambiente.texto()} · ${reais(getDinheiro())} em caixa.`;
+}
 
 renderer.setAnimationLoop(() => {
   relogio.update();

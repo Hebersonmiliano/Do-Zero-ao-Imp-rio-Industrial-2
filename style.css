@@ -227,3 +227,38 @@ kbd {
 #botao-som[aria-pressed="false"] { color: var(--apagado); text-decoration: line-through; }
 #botao-som:hover { border-color: var(--laranja); }
 #botao-som:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; }
+
+/* Tela inicial (v0.6.1): também libera o som e o teclado quando o jogo roda dentro do portal. */
+#inicio[hidden] { display: none; }
+#inicio {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(ellipse at 30% 20%, rgba(242, 140, 40, 0.18), transparent 55%), rgba(8, 22, 26, 0.82);
+  backdrop-filter: blur(3px);
+}
+.inicio-caixa { width: min(560px, 100%); display: grid; gap: 10px; text-align: left; }
+.inicio-selo { margin: 0; font: 700 12px var(--titulo); letter-spacing: 0.16em; text-transform: uppercase; color: var(--laranja); }
+#inicio h1 { margin: 0; font: 800 clamp(34px, 6vw, 58px)/0.95 var(--titulo); letter-spacing: 0.01em; text-wrap: balance; }
+#inicio h1 span { display: block; color: var(--laranja); }
+.inicio-sub { margin: 0; font: 600 16px var(--titulo); letter-spacing: 0.22em; text-transform: uppercase; color: var(--apagado); }
+.inicio-texto { margin: 6px 0 8px; font-size: 16px; line-height: 1.5; color: var(--texto); max-width: 46ch; }
+#botao-jogar {
+  justify-self: start;
+  padding: 12px 34px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--laranja), #ffb24e);
+  color: #10262d;
+  font: 800 20px var(--titulo);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(242, 140, 40, 0.35);
+}
+#botao-jogar:hover { filter: brightness(1.06); }
+#botao-jogar:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.inicio-nota { margin: 0; font-size: 13px; color: var(--apagado); }
+.inicio-versao { margin: 8px 0 0; font: 600 12px var(--titulo); letter-spacing: 0.1em; color: var(--apagado); opacity: 0.7; }
