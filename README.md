@@ -6,6 +6,8 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
+**v0.6.1 — Trilha sonora.** Música original composta para o jogo, gerada no navegador, que cresce com a fábrica e muda à noite, mais efeitos sonoros novos.
+
 **v0.6 — Qualidade, manutenção e energia.** As máquinas se desgastam, fazem caixas com defeito e podem quebrar; a inspeção separa os defeitos; a linha consome energia, com conta diária e corte se a conta não for paga.
 
 Antes dela veio a **v0.5.1 — Visual do Distrito.** A oficina virou um prédio de verdade, o terreno ganhou piso, faixas, cerca, doca e van, as máquinas e esteiras têm modelos e animação, o dia vira noite com luzes acendendo, a câmera gira e dá zoom, e o HUD foi redesenhado.
@@ -45,6 +47,7 @@ O que já dá para jogar:
 | Q, Z ou arrastar o mouse | Girar a câmera |
 | + e −, ou roda do mouse | Aproximar e afastar |
 | H | Mostrar ou esconder a lista de controles |
+| O | Ligar ou desligar o som (também há um botão na barra superior) |
 | N duas vezes | Apagar o progresso e começar um jogo novo |
 
 O quadrado no chão à frente do jogador mostra onde a próxima máquina vai ficar: verde se a célula está livre, vermelho se está ocupada.
@@ -88,6 +91,15 @@ O painel à direita mostra a reputação, até 3 ofertas e os contratos em andam
 - **Devoluções:** caixa com defeito entregue em contrato volta. O cliente não paga por ela e a reputação cai 2 pontos por caixa (até 10). Na venda avulsa ela vale metade.
 - **Energia:** máquina automática produzindo, esteira andando e máquina parada consomem energia. A tarifa é noturna das 22h às 6h (×0,6), de pico das 18h às 21h (×1,5) e normal no resto do dia. A conta do dia é cobrada à meia-noite; se faltar dinheiro, a dívida corta a energia da linha automática até ser paga.
 
+## Trilha sonora
+
+"Turno no Distrito" é uma composição original em ré menor, a 100 BPM, com balanço de *swing*. Tem 48 compassos em seis partes (A A B A C B), cerca de 1 minuto e 55 segundos antes de repetir. Tudo é sintetizado na hora pela Web Audio API, sem arquivos de som: piano elétrico, pad, baixo, bateria e melodia, com reverb e eco em estéreo.
+
+- **Cresce com a fábrica:** sem máquinas tocam só piano e pad; com máquinas entram baixo e chimbal; com uma automática produzindo entra a bateria; com duas ou mais, a melodia completa.
+- **Dia e noite:** à noite a bateria vai para meio tempo, o piano segura os acordes, o som fica mais abafado e a melodia passa para um timbre de sino.
+- **Efeitos:** prensa ao produzir (as máquinas próximas soam mais alto), caixa registradora nas vendas, arpejo ao aceitar contrato, aviso de novo cliente, batida ao instalar máquina, moeda nas compras, estalo metálico na quebra, catraca no conserto e bipe de erro.
+- O som começa no primeiro clique ou tecla, como os navegadores exigem, pausa quando a aba fica escondida e lembra se foi desligado.
+
 ## Visual
 
 - **Terreno:** piso de concreto em placas, faixas de circulação amarelas, área de carga zebrada, cerca com portão e postes de luz.
@@ -119,6 +131,7 @@ As regras da linha automática, dos contratos, da qualidade e energia, das rotas
 
 ```bash
 node testes/automacao.test.mjs
+node testes/composicao.test.mjs
 node testes/contratos.test.mjs
 node testes/qualidade.test.mjs
 node testes/rotas.test.mjs
@@ -147,6 +160,8 @@ node testes/salvamento.test.mjs
 | `js/rotas.js` | Rotas em L das esteiras, contornando oficina, doca e van |
 | `js/automacao.js` | Regras da linha automática: produção sozinha, limite da saída e vazão da esteira |
 | `js/contratos.js` | Clientes, ofertas, contratos, prazos, multas e reputação |
+| `js/audio/composicao.js` | Partitura da trilha: acordes, melodia, baixo, bateria e forma |
+| `js/audio/musica.js` | Motor de áudio: instrumentos sintetizados, camadas, arranjo noturno e efeitos |
 | `js/qualidade.js` | Desgaste, defeitos, quebra, manutenção e inspeção |
 | `js/energia.js` | Consumo, tarifas por hora, conta diária, dívida e corte |
 | `js/salvamento.js` | Save versionado no navegador: montar, validar, migrar, gravar e apagar |

@@ -211,3 +211,19 @@ kbd {
   #producao, #ajuda { display: none; }
   #painel-contratos { top: auto; bottom: 12px; max-height: 40vh; }
 }
+
+/* Botão de som (v0.6.1): único elemento da barra que recebe clique. */
+#botao-som {
+  pointer-events: auto;
+  padding: 5px 12px;
+  border: 1px solid var(--petroleo-borda);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--texto);
+  font: 600 13px var(--titulo);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+#botao-som[aria-pressed="false"] { color: var(--apagado); text-decoration: line-through; }
+#botao-som:hover { border-color: var(--laranja); }
+#botao-som:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; }

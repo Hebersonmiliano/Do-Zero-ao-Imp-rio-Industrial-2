@@ -154,6 +154,7 @@ Decididas em 2026-10-27, antes da v0.1:
 | v0.5 | Concluída | Seis tipos de clientes oferecem contratos com produto exato, quantidade, pagamento e prazo. Reputação de 0 a 100 libera clientes e aumenta pagamentos. Substitui o pedido genérico da primeira versão jogável. |
 | v0.5.1 | Concluída | Visual do Distrito: modelos de oficina, máquinas, esteiras, estoque, doca e van; terreno cercado; ciclo de dia e noite; câmera com rotação e zoom; HUD e rótulos redesenhados. Sem mudança de regras. |
 | v0.6 | Concluída | Desgaste, defeitos e quebra das máquinas; manutenção (K); inspeção manual e inspetor automático (I); devoluções em contratos; energia com tarifa por hora, conta diária e corte. |
+| v0.6.1 | Concluída | Trilha sonora original adaptativa (dia e noite, camadas por intensidade) e efeitos sonoros, tudo sintetizado. |
 | Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
@@ -223,6 +224,22 @@ Feita antes da v0.6 para fixar o estilo enquanto o cenário ainda é pequeno. A 
 - Uma hora de jogo dura 15 segundos (6 minutos por dia). Uma máquina automática produzindo o dia todo gasta cerca de R$ 24 de energia.
 - Sem inspeção, as caixas defeituosas vão misturadas ao estoque e saem na mesma proporção quando um contrato é entregue.
 - **Critério de pronto atendido:** defeitos separados na inspeção, máquina quebra e exige manutenção, consumo visível no HUD. Verificado em `testes/qualidade.test.mjs` e jogando no navegador.
+
+### v0.6.1 em detalhe (trilha sonora)
+
+O primeiro jogo usa um loop de 35 segundos (108 BPM, mono, 22 kHz) que repete igual o tempo todo, e bipes de onda quadrada nos eventos. A trilha do 2 foi feita para superar isso:
+
+| | Império 1 | Império 2 |
+| --- | --- | --- |
+| Duração antes de repetir | 35 s | 1 min 55 s (48 compassos) |
+| Formato | WAV mono 22 kHz (1,5 MB) | síntese em tempo real, estéreo, sem arquivo |
+| Arranjo | fixo | 4 níveis de intensidade e versão noturna |
+| Efeitos | bipes de onda quadrada | 10 efeitos com timbres próprios |
+
+- **Partitura** (`js/audio/composicao.js`): ré menor, 100 BPM, swing de 12%. Seção A: B♭maj7, C6, Am7, Dm9. Seção B: Gm9, C7, Fmaj7, A7. Seção C (ponte): Dm7, B♭maj7, Gm7, A7sus resolvendo em A7.
+- **Intensidade:** 0 sem máquinas (piano e pad), 1 com máquinas (baixo e chimbal), 2 com uma automática produzindo (bateria), 3 com duas ou mais (melodia). As camadas entram e saem com transição de 2 segundos.
+- **Noite:** filtro passa-baixa em 2,2 kHz, bateria em meio tempo, piano sustentado, baixo só nos tempos fortes e melodia em sino.
+- **Testes:** `testes/composicao.test.mjs` confere forma, duração, notas dentro do compasso e da tessitura. A gravação de uma prévia no navegador confirmou a entrada das camadas e o arranjo noturno.
 
 ### Salvamento em detalhe
 

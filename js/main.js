@@ -68,7 +68,8 @@ import {
   virarDia,
 } from './energia.js';
 import { criarCenario } from './cenario.js';
-import { DURACAO_DIA, criarAmbiente } from './visual/ambiente.js';
+import { DURACAO_DIA, criarAmbiente, escuridao } from './visual/ambiente.js';
+import { criarMusica } from './audio/musica.js';
 import { criarCameraJogo } from './visual/camera.js';
 import { criarRotulos } from './visual/rotulos.js';
 import { criarOficina } from './visual/oficina.js';
@@ -111,6 +112,10 @@ const elCorProduto = document.getElementById('cor-produto');
 const elAjuda = document.getElementById('ajuda');
 const elEnergia = document.getElementById('energia');
 const elQualidade = document.getElementById('qualidade');
+const elBotaoSom = document.getElementById('botao-som');
+
+// Trilha sonora e efeitos (v0.6.1). O áudio só começa depois do primeiro clique ou tecla.
+const musica = criarMusica();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -166,6 +171,12 @@ let caixas = 0;
 
 const teclas = new Set();
 let timerMensagem = null;
+
+// Aviso de algo que não deu certo: mensagem com som de erro.
+function falha(texto) {
+  musica.tocar('erro');
+  mensagem(texto);
+}
 
 function mensagem(texto) {
   elMensagem.textContent = texto;
@@ -241,6 +252,7 @@ function fabricar(maquina, produto) {
   const { defeito, quebrou } = registrarProducao(maquina);
   cena.add(criarCaixa(maquina, produto, defeito));
   caixas += 1;
+  if (quebrou) musica.tocar('quebra');
   if (quebrou) mensagem(`Uma máquina quebrou! Chegue perto e aperte K para consertar (R$ ${custoManutencao(maquina)}).`);
   atualizarPlacar();
   return true;
@@ -250,7 +262,7 @@ function fabricar(maquina, produto) {
 const acoesFuncionario = {
   podeProduzir: () => getDinheiro() >= CUSTO_PRODUCAO,
   produzir(maquina) {
-    fabricar(maquina, produtoAtual());
+    if (fabricar(maquina, produtoAtual())) tocarPerto('caixa', maquina, 0.4);
   },
   recolher(maquina) {
     const levadas = maquina.saida.splice(0);
@@ -275,12 +287,13 @@ function ligarEsteira() {
     return;
   }
   if (!pagar(CUSTO_ESTEIRA)) {
-    mensagem(`Esteira custa R$ ${CUSTO_ESTEIRA}. Você tem R$ ${getDinheiro()}.`);
+    falha(`Esteira custa R$ ${CUSTO_ESTEIRA}. Você tem R$ ${getDinheiro()}.`);
     return;
   }
   maquina.esteira = criarEsteira(maquina, ESTOQUE_PONTO);
   cena.add(maquina.esteira);
   atualizarPlacar();
+  musica.tocar('compra');
   mensagem('Esteira ligada ao estoque.');
 }
 
@@ -289,7 +302,7 @@ const acoesLinha = {
   podePagar: () => getDinheiro() >= CUSTO_PRODUCAO,
   semEnergia: () => energiaCortada(energia),
   produzir(maquina, produto) {
-    fabricar(maquina, produto);
+    if (fabricar(maquina, produto)) tocarPerto('caixa', maquina, 0.35);
   },
   descartar(item) {
     cena.remove(item.malha);
@@ -319,11 +332,12 @@ function automatizarMaquina() {
     return;
   }
   if (!pagar(CUSTO_AUTOMACAO)) {
-    mensagem(`Automação custa R$ ${CUSTO_AUTOMACAO}. Você tem R$ ${getDinheiro()}.`);
+    falha(`Automação custa R$ ${CUSTO_AUTOMACAO}. Você tem R$ ${getDinheiro()}.`);
     return;
   }
   programar(maquina, produtoAtual());
   marcarAutomatica(maquina);
+  musica.tocar('compra');
   atualizarPlacar();
   mensagem(
     maquina.esteira
@@ -335,17 +349,18 @@ function automatizarMaquina() {
 // Contrata um funcionário que aparece perto da oficina e trabalha sozinho.
 function contratarFuncionario() {
   if (funcionarios.length >= LIMITE_FUNCIONARIOS) {
-    mensagem(`Limite de ${LIMITE_FUNCIONARIOS} funcionários.`);
+    falha(`Limite de ${LIMITE_FUNCIONARIOS} funcionários.`);
     return;
   }
   if (!pagar(CUSTO_FUNCIONARIO)) {
-    mensagem(`Funcionário custa R$ ${CUSTO_FUNCIONARIO}. Você tem R$ ${getDinheiro()}.`);
+    falha(`Funcionário custa R$ ${CUSTO_FUNCIONARIO}. Você tem R$ ${getDinheiro()}.`);
     return;
   }
   const f = criarFuncionario(-3 + funcionarios.length, 3.5);
   cena.add(f.malha);
   funcionarios.push(f);
   atualizarPlacar();
+  musica.tocar('compra');
   mensagem('Funcionário contratado.');
 }
 
@@ -364,12 +379,13 @@ function manutencao() {
   }
   const custo = custoManutencao(maquina);
   if (!pagar(custo)) {
-    mensagem(`${maquina.quebrada ? 'Conserto' : 'Manutenção'} custa R$ ${custo}. Você tem ${reais(getDinheiro())}.`);
+    falha(`${maquina.quebrada ? 'Conserto' : 'Manutenção'} custa R$ ${custo}. Você tem ${reais(getDinheiro())}.`);
     return;
   }
   const estavaQuebrada = maquina.quebrada;
   fazerManutencao(maquina);
   atualizarPlacar();
+  musica.tocar('manutencao');
   mensagem(estavaQuebrada ? `Máquina consertada por R$ ${custo}.` : `Manutenção feita por R$ ${custo}: desgaste zerado.`);
 }
 
@@ -385,7 +401,7 @@ function inspecionar() {
     }
     const custo = custoInspecaoManual(total);
     if (!pagar(custo)) {
-      mensagem(`Inspecionar ${total} caixas custa R$ ${custo}. Você tem ${reais(getDinheiro())}.`);
+      falha(`Inspecionar ${total} caixas custa R$ ${custo}. Você tem ${reais(getDinheiro())}.`);
       return;
     }
     const separadas = separarDefeituosas();
@@ -408,12 +424,13 @@ function inspecionar() {
     return;
   }
   if (!pagar(CUSTO_INSPETOR)) {
-    mensagem(`Inspetor custa R$ ${CUSTO_INSPETOR}. Você tem ${reais(getDinheiro())}.`);
+    falha(`Inspetor custa R$ ${CUSTO_INSPETOR}. Você tem ${reais(getDinheiro())}.`);
     return;
   }
   maquina.inspecao = true;
   adicionarInspetor(maquina);
   atualizarPlacar();
+  musica.tocar('compra');
   mensagem('Inspetor instalado: caixas com defeito vão direto para o refugo.');
 }
 
@@ -438,11 +455,11 @@ function posicionarMaquina() {
   const cx = Math.round(p.x + f.x * 1.5);
   const cz = Math.round(p.z + f.z * 1.5);
   if (!cabeAqui(cx, cz)) {
-    mensagem('Sem espaço aqui.');
+    falha('Sem espaço aqui.');
     return;
   }
   if (!pagar(CUSTO_MAQUINA)) {
-    mensagem(`Máquina custa R$ ${CUSTO_MAQUINA}. Você tem R$ ${getDinheiro()}.`);
+    falha(`Máquina custa R$ ${CUSTO_MAQUINA}. Você tem R$ ${getDinheiro()}.`);
     return;
   }
   const maquina = criarMaquina(cx, cz);
@@ -451,6 +468,7 @@ function posicionarMaquina() {
   rotularMaquina(maquina);
   registrarObstaculo(cx - 0.45, cx + 0.45, cz - 0.45, cz + 0.45);
   atualizarPlacar();
+  musica.tocar('maquina');
   mensagem('Máquina posicionada.');
 }
 
@@ -462,18 +480,18 @@ function produzirCaixa() {
     return;
   }
   if (maquina.quebrada) {
-    mensagem(`Máquina quebrada. Aperte K para consertar (R$ ${custoManutencao(maquina)}).`);
+    falha(`Máquina quebrada. Aperte K para consertar (R$ ${custoManutencao(maquina)}).`);
     return;
   }
   if (saidaCheia(maquina)) {
-    mensagem(`Saída cheia (${CAPACIDADE_SAIDA} caixas). Recolha com R ou ligue uma esteira.`);
+    falha(`Saída cheia (${CAPACIDADE_SAIDA} caixas). Recolha com R ou ligue uma esteira.`);
     return;
   }
   if (getDinheiro() < CUSTO_PRODUCAO) {
-    mensagem(`Sem dinheiro para papelão (R$ ${CUSTO_PRODUCAO}).`);
+    falha(`Sem dinheiro para papelão (R$ ${CUSTO_PRODUCAO}).`);
     return;
   }
-  fabricar(maquina, produtoAtual());
+  if (fabricar(maquina, produtoAtual())) musica.tocar('caixa');
   if (!maquina.quebrada) mensagem(maquina.saida.at(-1)?.defeito ? 'Caixa produzida, mas saiu com defeito.' : 'Caixa produzida.');
 }
 
@@ -502,6 +520,7 @@ function registrarVenda(valor, texto) {
   const jaVencida = venceu();
   receber(valor);
   rotulos.flutuar({ x: EXPEDICAO.x, y: 2.2, z: EXPEDICAO.z }, `+${reais(valor)}`);
+  musica.tocar('venda');
   atualizarPlacar();
   mensagem(
     !jaVencida && venceu()
@@ -591,9 +610,10 @@ function mostrarContratos() {
 function aceitarOferta(posicao) {
   const { contrato, erro } = aceitar(quadro, posicao);
   if (erro) {
-    mensagem(erro);
+    falha(erro);
     return;
   }
+  musica.tocar('contrato');
   mensagem(`Contrato aceito: ${contrato.quantidade}× ${nomeProduto(contrato.chave)} para ${nomeCliente(contrato.cliente)}.`);
   mostrarContratos();
 }
@@ -601,6 +621,7 @@ function aceitarOferta(posicao) {
 let cronometroPainel = 0;
 function avancarContratos(dt) {
   const eventos = atualizarContratos(quadro, dt, produtoPorChave);
+  if (eventos.novas.length) musica.tocar('cliente');
   if (eventos.novas.length) mensagem(`Novo cliente: ${nomeCliente(eventos.novas[0].cliente)} quer um contrato.`);
   for (const { contrato, multa } of eventos.vencidos) {
     const cobrado = cobrarMulta(multa);
@@ -630,6 +651,7 @@ const teclasDeAcao = {
   KeyL: ligarEsteira,
   KeyU: automatizarMaquina,
   KeyK: manutencao,
+  KeyO: alternarSom,
   KeyI: inspecionar,
   KeyN: novoJogo,
   KeyQ: () => cameraJogo.girar(-1),
@@ -650,7 +672,28 @@ const teclasDeAcao = {
   KeyM: () => trocarCatalogo('material', 'Material'),
 };
 
+// Som: tecla O ou botão na barra. O primeiro gesto do jogador libera o áudio no navegador.
+function alternarSom() {
+  musica.desbloquear();
+  const ligado = musica.alternar();
+  mostrarBotaoSom();
+  mensagem(ligado ? 'Som ligado.' : 'Som desligado.');
+}
+function mostrarBotaoSom() {
+  elBotaoSom.textContent = musica.ligado ? 'Som ligado' : 'Som desligado';
+  elBotaoSom.setAttribute('aria-pressed', String(musica.ligado));
+}
+elBotaoSom.addEventListener('click', (e) => {
+  e.stopPropagation();
+  alternarSom();
+  elBotaoSom.blur();
+});
+mostrarBotaoSom();
+window.addEventListener('pointerdown', () => musica.desbloquear());
+document.addEventListener('visibilitychange', () => musica.pausar(document.visibilityState === 'hidden'));
+
 window.addEventListener('keydown', (e) => {
+  musica.desbloquear();
   teclas.add(e.code);
   if (e.repeat) return;
   teclasDeAcao[e.code]?.();
@@ -708,10 +751,24 @@ function avancarEnergia(dt) {
   }
 }
 
+// Efeito que só soa se a máquina estiver perto do jogador, mais baixo quanto mais longe.
+function tocarPerto(nome, maquina, forca) {
+  const d = Math.hypot(maquina.x - jogador.position.x, maquina.z - jogador.position.z);
+  if (d < 9) musica.tocar(nome, forca * (1 - d / 9));
+}
+
+// A trilha acompanha a fábrica: mais camadas com mais máquinas automáticas produzindo, e arranjo noturno.
+function atualizarMusica() {
+  const produzindo = maquinas.filter((m) => m.luz.userData.estado === 'produzindo').length;
+  musica.definirIntensidade(maquinas.length === 0 ? 0 : produzindo === 0 ? 1 : produzindo === 1 ? 2 : 3);
+  musica.definirNoite(escuridao(ambiente.hora()) > 0.5);
+}
+
 // Partes só visuais: dia e noite, câmera, esteiras, máquinas, cursor, rótulos e relógio.
 let textoRelogio = '';
 function animarCena(dt) {
   ambiente.atualizar(dt);
+  atualizarMusica();
   cameraJogo.atualizar(dt, jogador.position);
   animarEsteiras(dt);
   for (const m of maquinas) animarMaquina(m, dt, m.luz.userData.estado === 'produzindo');
