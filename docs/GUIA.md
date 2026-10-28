@@ -1,8 +1,8 @@
 # Guia de como jogar — Do Zero ao Império Industrial 2
 
-Este guia explica tudo o que existe no jogo até a versão **0.6.1**: como começar, o que cada tecla faz, como funcionam contratos, automação, qualidade e energia, e estratégias para crescer rápido.
+Este guia explica tudo o que existe no jogo até a versão **0.6.2**: como começar, o que cada tecla faz, como funcionam contratos, automação, qualidade e energia, e estratégias para crescer rápido.
 
-**Jogue no navegador:** [Portal Pixel](https://hebersonmiliano.github.io/portal-jogos/jogo.html?id=imperio-industrial-2). Precisa de computador com teclado e mouse.
+**Jogue no navegador:** [Portal Pixel](https://hebersonmiliano.github.io/portal-jogos/jogo.html?id=imperio-industrial-2). Funciona no computador com teclado e mouse ou com controle de Xbox, PlayStation e similares.
 
 ![O Distrito Industrial com a fábrica em funcionamento](imagens/visao-geral.jpg)
 
@@ -54,27 +54,36 @@ Pelo caminho você vai montar máquinas, aceitar contratos de clientes, contrata
 
 ## 3. Controles
 
-| Tecla | O que faz |
-|---|---|
-| **W A S D** ou setas | Andar. A direção segue a câmera: W vai para o fundo da tela. |
-| **B** | Colocar uma máquina na célula marcada no chão (R$ 60). |
-| **E** | Produzir uma caixa na máquina mais próxima (R$ 2). |
-| **R** | Levar as caixas da máquina mais próxima para o estoque. |
-| **V** | Na expedição: entregar contratos prontos ou vender o estoque livre. |
-| **T / C / M** | Trocar tamanho, cor e material da próxima caixa. |
-| **F** | Contratar funcionário (R$ 80, até 3). |
-| **L** | Ligar esteira da máquina mais próxima até o estoque (R$ 40). |
-| **U** | Automatizar a máquina mais próxima (R$ 100). Numa máquina já automática, reprograma para a caixa escolhida, sem custo. |
-| **K** | Manutenção ou conserto da máquina mais próxima. |
-| **I** | Perto do estoque: inspecionar tudo. Perto de máquina com esteira: instalar inspetor automático (R$ 80). |
-| **1 / 2 / 3** | Aceitar a oferta de contrato nessa posição. |
-| **Q / Z** | Girar a câmera 45°. Também dá para arrastar com o mouse. |
-| **+ / −** | Aproximar e afastar. Também funciona com a roda do mouse. |
-| **H** | Mostrar ou esconder a lista de controles. |
-| **O** | Ligar ou desligar o som (há também um botão na barra superior). |
-| **N** duas vezes | Apagar o progresso e começar de novo. |
+Dá para jogar com **teclado e mouse** ou com **controle** (Xbox, PlayStation e similares). O controle é reconhecido assim que você aperta um botão, e as dicas da tela passam a mostrar os botões dele. Mexeu no teclado ou no mouse, as dicas voltam a mostrar as teclas.
 
-Para usar uma máquina (E, R, L, U, K, I), fique a menos de 1,8 metro dela, ou seja, encostado.
+| Ação | Teclado | Controle |
+|---|---|---|
+| Andar (segue a câmera) | **W A S D** ou setas | Analógico esquerdo |
+| Colocar máquina (R$ 60) | **B** | **Y** |
+| Produzir caixa (R$ 2) | **E** | **A** |
+| Levar saída ao estoque | **R** | **B** |
+| Entregar ou vender na expedição | **V** | **X** |
+| Tamanho, cor e material | **T**, **C**, **M** | Direcional **↑**, **←**, **→** |
+| Aceitar contrato | **1**, **2**, **3** ou clique na oferta | Direcional **↓** (primeira oferta); as outras pelo menu |
+| Ligar esteira (R$ 40) | **L** | **RT** |
+| Automatizar ou reprogramar (R$ 100) | **U** | **LT** |
+| Manutenção ou conserto | **K** | **LB** |
+| Inspecionar ou instalar inspetor | **I** | **RB** |
+| Contratar funcionário (R$ 80) | **F** | pelo menu |
+| Girar a câmera | **Q** e **Z**, ou arrastar o mouse | Analógico direito para os lados |
+| Zoom | **+** e **−**, ou roda do mouse | Analógico direito para cima e para baixo |
+| Menu de comandos | **Esc** ou botão **Mais** | **Menu** |
+| Mostrar controles | **H** | **View** |
+| Som | **O** ou botão na barra superior | pelo menu |
+| Novo jogo | **N** duas vezes | pelo menu (confirmar duas vezes) |
+
+**Com o mouse**, tudo também pode ser feito por clique: a **barra de ações** no rodapé (Máquina, Produzir, Recolher, Entregar, Esteira, Automatizar, Manutenção, Inspecionar, Funcionário e Mais), os botões **Tamanho**, **Cor** e **Material** no painel da esquerda, as **ofertas de contrato** no painel da direita e o **menu de comandos**.
+
+**No menu de comandos** ficam as ações menos frequentes: contratar funcionário, aceitar as ofertas 1, 2 e 3, ligar ou desligar o som, mostrar os controles e começar um jogo novo. No controle, escolha com o direcional, confirme com **A** e feche com **B**.
+
+O controle vibra quando você vende e quando uma máquina quebra, se o controle e o navegador suportarem vibração.
+
+Para usar uma máquina (produzir, recolher, esteira, automatizar, manutenção, inspetor), fique a menos de 1,8 metro dela, ou seja, encostado.
 
 ## 4. A tela do jogo
 
@@ -298,8 +307,10 @@ Cada máquina tem uma torre de luz:
 
 **Não ouço a música.** O som começa depois do primeiro clique ou tecla. Confira se o botão na barra está em "Som ligado" (tecla O).
 
-**Dá para jogar no celular?** Ainda não: o jogo precisa de teclado.
+**Dá para jogar no celular?** Ainda não: o jogo precisa de teclado, mouse ou controle.
+
+**Meu controle não funciona.** Aperte qualquer botão com a página do jogo em foco; o navegador só mostra o controle ao site depois disso. Controles de Xbox e PlayStation funcionam por USB ou Bluetooth em navegadores como Chrome, Edge e Firefox.
 
 ---
 
-*Guia da versão 0.6.1. Os números deste guia vêm direto das regras do jogo (`js/`). Se uma versão nova mudar algo, o guia é atualizado junto.*
+*Guia da versão 0.6.2. Os números deste guia vêm direto das regras do jogo (`js/`). Se uma versão nova mudar algo, o guia é atualizado junto.*

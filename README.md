@@ -10,6 +10,8 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
+**v0.6.2 — Controle, teclado e mouse.** Suporte a controle de Xbox, PlayStation e similares, barra de ações e menu clicáveis com o mouse, e dicas na tela que mostram a tecla ou o botão do controle conforme o que você está usando.
+
 **v0.6.1 — Trilha sonora.** Música original composta para o jogo, gerada no navegador, que cresce com a fábrica e muda à noite, mais efeitos sonoros novos.
 
 **v0.6 — Qualidade, manutenção e energia.** As máquinas se desgastam, fazem caixas com defeito e podem quebrar; a inspeção separa os defeitos; a linha consome energia, com conta diária e corte se a conta não for paga.
@@ -34,6 +36,31 @@ O que já dá para jogar:
 
 ## Controles
 
+O jogo funciona com **teclado e mouse** ou **controle** (Xbox, PlayStation e similares com mapeamento padrão). O controle é reconhecido no primeiro botão apertado, e as dicas da tela passam a mostrar os botões dele. Com o mouse, a barra de ações no rodapé, os botões de tamanho, cor e material, as ofertas de contrato e o menu de comandos são clicáveis.
+
+### Controle
+
+| Botão | Ação |
+|---|---|
+| Analógico esquerdo | Andar (inclinar pouco anda devagar) |
+| Analógico direito | Girar a câmera (esquerda e direita) e zoom (cima e baixo) |
+| A | Produzir caixa · na tela inicial, começar |
+| B | Levar a saída ao estoque |
+| X | Entregar contratos ou vender na expedição |
+| Y | Colocar máquina |
+| LB | Manutenção ou conserto |
+| RB | Inspecionar estoque ou instalar inspetor |
+| LT | Automatizar ou reprogramar |
+| RT | Ligar esteira |
+| Direcional ↑ ← → | Tamanho, cor e material |
+| Direcional ↓ | Aceitar a primeira oferta de contrato |
+| Menu | Menu de comandos: funcionário, ofertas 2 e 3, som, controles e novo jogo |
+| View | Mostrar ou esconder os controles |
+
+O controle vibra nas vendas e quando uma máquina quebra (se o controle e o navegador suportarem).
+
+### Teclado e mouse
+
 | Tecla | Ação |
 |---|---|
 | WASD ou setas | Andar (relativo à câmera: W vai para o fundo da tela) |
@@ -52,6 +79,7 @@ O que já dá para jogar:
 | + e −, ou roda do mouse | Aproximar e afastar |
 | H | Mostrar ou esconder a lista de controles |
 | O | Ligar ou desligar o som (também há um botão na barra superior) |
+| Esc | Abrir ou fechar o menu de comandos |
 | N duas vezes | Apagar o progresso e começar um jogo novo |
 
 O quadrado no chão à frente do jogador mostra onde a próxima máquina vai ficar: verde se a célula está livre, vermelho se está ocupada.
@@ -137,6 +165,7 @@ As regras da linha automática, dos contratos, da qualidade e energia, das rotas
 node testes/automacao.test.mjs
 node testes/composicao.test.mjs
 node testes/contratos.test.mjs
+node testes/entrada.test.mjs
 node testes/qualidade.test.mjs
 node testes/rotas.test.mjs
 node testes/salvamento.test.mjs
@@ -166,6 +195,7 @@ node testes/salvamento.test.mjs
 | `js/contratos.js` | Clientes, ofertas, contratos, prazos, multas e reputação |
 | `js/audio/composicao.js` | Partitura da trilha: acordes, melodia, baixo, bateria e forma |
 | `js/audio/musica.js` | Motor de áudio: instrumentos sintetizados, camadas, arranjo noturno e efeitos |
+| `js/entrada.js` | Leitura do controle: zona morta, gatilhos, botões e mapeamento padrão |
 | `js/qualidade.js` | Desgaste, defeitos, quebra, manutenção e inspeção |
 | `js/energia.js` | Consumo, tarifas por hora, conta diária, dívida e corte |
 | `js/salvamento.js` | Save versionado no navegador: montar, validar, migrar, gravar e apagar |

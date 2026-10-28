@@ -155,6 +155,7 @@ Decididas em 2026-10-27, antes da v0.1:
 | v0.5.1 | Concluída | Visual do Distrito: modelos de oficina, máquinas, esteiras, estoque, doca e van; terreno cercado; ciclo de dia e noite; câmera com rotação e zoom; HUD e rótulos redesenhados. Sem mudança de regras. |
 | v0.6 | Concluída | Desgaste, defeitos e quebra das máquinas; manutenção (K); inspeção manual e inspetor automático (I); devoluções em contratos; energia com tarifa por hora, conta diária e corte. |
 | v0.6.1 | Concluída | Trilha sonora original adaptativa (dia e noite, camadas por intensidade) e efeitos sonoros, tudo sintetizado. |
+| v0.6.2 | Concluída | Controle de Xbox e similares (Gamepad API, mapeamento padrão, vibração), barra de ações e menu de comandos clicáveis, ofertas clicáveis e dicas que alternam entre teclado e controle. |
 | Salvamento | Concluído | Save versionado no navegador, automático a cada 5 segundos, com validação e espaço para migrações. Novo jogo com N duas vezes. |
 | Cenário | Concluído | Personagem com colete e capacete, bairro com rua, calçadas, prédios vizinhos e árvores. |
 
