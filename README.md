@@ -10,6 +10,8 @@ Este repositório é separado do [primeiro jogo](https://github.com/Hebersonmili
 
 ## Estado atual
 
+**v0.8 — Expansão e construção avançada.** Compre o terreno vizinho para liberar novas células de produção, construa um escritório administrativo e finalize a propriedade com uma fachada corporativa iluminada. As três etapas aparecem no cenário e ficam no save.
+
 **v0.7 — Veículos e mapa de entregas.** Os contratos prontos agora são carregados na van; distância e trânsito consomem o prazo, o pagamento acontece na chegada e o veículo precisa voltar à doca. O painel mostra a rota em tempo real.
 
 Antes dela veio a **v0.6.3 — Salvamento mais seguro.** Indicador "Salvo há X s" na barra, aviso quando o navegador bloqueia o armazenamento, cópia de segurança do save, pedido de armazenamento persistente e código do progresso para levar a partida a outro navegador.
@@ -77,6 +79,7 @@ O controle vibra nas vendas e quando uma máquina quebra (se o controle e o nave
 | I | Perto do estoque: inspecionar tudo (R$ 1 a cada 5 caixas). Perto de máquina com esteira: instalar inspetor automático (R$ 80) |
 | T, C, M | Trocar tamanho, cor e material da próxima caixa |
 | F | Contratar funcionário (R$ 80, até 3) |
+| G | Comprar o terreno vizinho ou construir a próxima melhoria da propriedade |
 | L | Ligar esteira da máquina próxima até o estoque (R$ 40) |
 | U | Automatizar a máquina próxima (R$ 100); numa máquina já automática, reprograma o produto |
 | Q, Z ou arrastar o mouse | Girar a câmera |
@@ -176,6 +179,7 @@ As regras da linha automática, dos contratos, da qualidade e energia, das rotas
 node testes/automacao.test.mjs
 node testes/composicao.test.mjs
 node testes/contratos.test.mjs
+node testes/construcao.test.mjs
 node testes/entrada.test.mjs
 node testes/entregas.test.mjs
 node testes/qualidade.test.mjs
@@ -205,6 +209,8 @@ node testes/salvamento.test.mjs
 | `js/rotas.js` | Rotas em L das esteiras, contornando oficina, doca e van |
 | `js/automacao.js` | Regras da linha automática: produção sozinha, limite da saída e vazão da esteira |
 | `js/contratos.js` | Clientes, ofertas, contratos, prazos, multas e reputação |
+| `js/construcao.js` | Compra do terreno e progressão das melhorias da propriedade |
+| `js/visual/expansao.js` | Lote vizinho, escritório administrativo e fachada corporativa |
 | `js/audio/composicao.js` | Partitura da trilha: acordes, melodia, baixo, bateria e forma |
 | `js/audio/musica.js` | Motor de áudio: instrumentos sintetizados, camadas, arranjo noturno e efeitos |
 | `js/entrada.js` | Leitura do controle: zona morta, gatilhos, botões e mapeamento padrão |
