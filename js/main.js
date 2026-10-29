@@ -1,6 +1,7 @@
 // Cena do Distrito Industrial: terreno, oficina, jogador, máquinas, funcionários, linha automática e contratos.
 // O visual (modelos, luz, câmera e rótulos) fica em js/visual/; aqui ficam as regras ligadas à cena.
 import * as THREE from 'three';
+import { COMPONENTES_PC, novoHardware, comprarPecaPC, iniciarPC, atualizarPC, importarHardware } from './informatica.js';
 import { avaliarCampanha } from './campanha.js';
 import { registrarObstaculo, cabeAqui, definirTerrenoExpandido } from './grade.js';
 import { criarJogador, atualizarJogador, andarAte } from './jogador.js';
@@ -172,6 +173,22 @@ let energia = novaEnergia();
 let frota = novaFrota();
 let servicos = { guarita:false, guarda:false, cao:false, limpeza:false, transportadora:false, eletrica:false, concertina:false, portao:false, alarme:false, drone:false, roboLimpeza:false, rh:false, gerente:false, androides:0, cafe:0, tempoLimpeza:0 };
 Object.assign(servicos,{datacenter:false,servidores:false,ia:false});
+let hardware=novoHardware();
+function comprarComponente(id) {
+  if(!comprarPecaPC(hardware,id,pagar)) { falha('Saldo insuficiente para comprar o componente.'); return; }
+  mensagem(`${COMPONENTES_PC[id].nome} comprado.`); atualizarPlacar();
+}
+function comprarBancadaPC() {
+  if(hardware.bancada) { mensagem('Bancada de PCs já comprada.'); return; }
+  if(!pagar(300)) { falha('Bancada de PCs custa R$ 300.'); return; }
+  hardware.bancada=true; atualizarPlacar(); mensagem('Bancada de PCs comprada. Compre as seis peças e inicie a montagem na loja.');
+}
+function montarPC() { const erro=iniciarPC(hardware); if(erro) falha(erro); else mensagem('Montagem iniciada: 30 segundos de jogo.'); }
+function venderPCs() {
+  if(!hardware.prontos) { mensagem('Nenhum PC pronto para vender.'); return; }
+  if(Math.hypot(jogador.position.x-EXPEDICAO.x,jogador.position.z-EXPEDICAO.z)>2.2) { mensagem('Aproxime-se da expedição para vender os PCs.'); return; }
+  const total=hardware.prontos*550; hardware.prontos=0; registrarVenda(total,`Computadores vendidos: R$ ${total}.`);
+}
 let construcao = novaConstrucao();
 visualExpansao.atualizar(construcao.nivel);
 let escritorioRegistrado = false;
@@ -252,7 +269,19 @@ function atualizarVisualServicos() {
     }
   }
   for(const v of frota.veiculos.filter((v) => v.id !== 1)) {
-    if(!modelosFrota.has(v.id)) { const modelo=criarVan(cena,-8,9.4); if(v.tipo === 'caminhao') modelo.scale.set(1.15,1.3,1.25); if(v.tipo === 'carreta') modelo.scale.set(1.15,1.3,1.7); modelosFrota.set(v.id,modelo); }
+    if(!modelosFrota.has(v.id)) {
+      let modelo;
+      if(['moto','bicicleta'].includes(v.tipo)) {
+        modelo=new THREE.Group();
+        for(const z of [-.6,.6]) { const roda=new THREE.Mesh(new THREE.TorusGeometry(.3,.07,8,16),new THREE.MeshStandardMaterial({color:'#222222'})); roda.rotation.y=Math.PI/2; roda.position.set(0,.3,z); modelo.add(roda); }
+        const quadro=new THREE.Mesh(new THREE.BoxGeometry(.22,.3,1),new THREE.MeshStandardMaterial({color:v.tipo==='moto'?'#ec8b32':'#438bba'})); quadro.position.y=.6; modelo.add(quadro);
+        const entregador=criarJogador(0,.8); entregador.scale.setScalar(.65); modelo.add(entregador);
+        modelo.position.set(-8,0,9.4); cena.add(modelo);
+      } else modelo=criarVan(cena,-8,9.4);
+      if(v.tipo === 'caminhao') modelo.scale.set(1.15,1.3,1.25);
+      if(v.tipo === 'carreta') modelo.scale.set(1.15,1.3,1.7);
+      modelosFrota.set(v.id,modelo);
+    }
     const modelo=modelosFrota.get(v.id), viagem=frota.viagens.find((x)=>x.veiculo===v.id);
     modelo.visible=!!viagem && viagem.progresso < .35;
     if(viagem) modelo.position.z=9.4+viagem.progresso*18;
@@ -287,6 +316,8 @@ function comprarAndroide() {
   servicos.androides++; atualizarVisualServicos(); atualizarPlacar(); mensagem('Androide contratado: produz em máquinas manuais e transporta caixas.');
 }
 function atualizarServicos(dt) {
+  if(atualizarPC(hardware,dt)) mensagem('Computador montado! Venda na expedição pelo botão da loja.');
+  document.getElementById('status-pcs').textContent=`PCs: ${hardware.bancada?'bancada comprada':'sem bancada'} · ${hardware.prontos} pronto(s) · ${hardware.restantes>0?Math.ceil(hardware.restantes)+' s em montagem':'parado'}. Peças: `+Object.entries(COMPONENTES_PC).map(([k,p])=>`${p.nome}: ${hardware.pecas[k]}`).join(' · ');
   servicos.cafe=Math.max(0,servicos.cafe-dt); jogador.userData.bonusVelocidade=servicos.cafe>0?1.25:1;
   if(servicos.limpeza) { servicos.tempoLimpeza+=dt; if(servicos.tempoLimpeza>=(servicos.roboLimpeza?10:30)) { servicos.tempoLimpeza=0; if(refugo>0) { refugo=0; atualizarPlacar(); } } }
   for(const androide of androides) atualizarFuncionario(androide,dt,maquinas,acoesFuncionario);
@@ -860,6 +891,17 @@ function trocarCatalogo(campo, rotulo) {
 }
 
 const teclasDeAcao = {
+  ComprarBicicleta: () => comprarFrota('bicicleta'),
+  ComprarMoto: () => comprarFrota('moto'),
+  BancadaPC: comprarBancadaPC,
+  MontarPC: montarPC,
+  VenderPC: venderPCs,
+  PecaCPU: () => comprarComponente('cpu'),
+  PecaMae: () => comprarComponente('placaMae'),
+  PecaMemoria: () => comprarComponente('memoria'),
+  PecaHD: () => comprarComponente('hd'),
+  PecaGabinete: () => comprarComponente('gabinete'),
+  PecaGPU: () => comprarComponente('gpu'),
   Datacenter: () => comprarServico('datacenter',600),
   Servidores: () => comprarServico('servidores',350),
   IA: () => comprarServico('ia',250),
@@ -1293,6 +1335,7 @@ function montarSaveAtual() {
     campanha: etapasConcluidas,
     nivelEstoque,
     servicos,
+    hardware,
     energia: exportarEnergia(energia),
     refugo,
     caixas,
@@ -1355,6 +1398,7 @@ function restaurarJogo() {
   caixas = save.caixas;
   etapasConcluidas = save.campanha ?? 0;
   nivelEstoque = save.nivelEstoque ?? 0;
+  hardware=importarHardware(save.hardware);
   if(save.servicos) {
     for(const k of ['guarita','guarda','cao','limpeza','transportadora','eletrica','concertina','portao','alarme','drone','roboLimpeza','rh','gerente','datacenter','servidores','ia']) servicos[k]=save.servicos[k]===true;
     servicos.androides=Math.min(4,Math.max(0,Math.floor(Number(save.servicos.androides)||0)));
