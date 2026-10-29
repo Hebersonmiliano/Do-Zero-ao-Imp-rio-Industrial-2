@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { avaliarCampanha } from './campanha.js';
 import { registrarObstaculo, cabeAqui, definirTerrenoExpandido } from './grade.js';
-import { criarJogador, atualizarJogador } from './jogador.js';
+import { criarJogador, atualizarJogador, andarAte } from './jogador.js';
 import {
   criarMaquina,
   criarCaixa,
@@ -883,6 +883,9 @@ renderer.domElement.addEventListener('click', (e) => {
     }]]); return;
   }
   fecharPainelMouse();
+  if (raioMouse.ray.intersectPlane(planoMouse, pontoMouse)) {
+    if (!andarAte(jogador, pontoMouse.x, pontoMouse.z)) mensagem('Não há caminho livre até esse ponto.');
+  }
 });
 const botoesMenu = [...elMenu.querySelectorAll('.menu-lista button')];
 let selecaoMenu = 0;
