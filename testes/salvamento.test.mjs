@@ -148,6 +148,13 @@ teste('terreno expandido preserva máquinas e jogador no lote vizinho (v0.8)', (
   assert.equal(lido.maquinas[0].x, 18);
 });
 
+teste('save preserva equipe de 6 no terreno e 10 no escritório', () => {
+  for (const [nivel, quantidade] of [[0, 3], [1, 6], [2, 10], [3, 10]]) {
+    const lido = lerSave(JSON.stringify({ versao: VERSAO_SAVE, construcao: { nivel }, funcionarios: Array.from({ length: 12 }, () => ({ x: 0, z: 3 })) }));
+    assert.equal(lido.funcionarios.length, quantidade);
+  }
+});
+
 teste('gravar, carregar e apagar no armazenamento', () => {
   const mem = memoria();
   assert.equal(carregar(mem), null);
