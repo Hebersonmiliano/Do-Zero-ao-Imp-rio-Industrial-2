@@ -209,5 +209,14 @@ teste('detecta navegador que não deixa salvar', () => {
   assert.equal(armazenamentoDisponivel({ setItem() { throw new Error('bloqueado'); }, removeItem() {} }), false);
 });
 
+teste('cargas de pessoas e androides não somem nem alteram estoque vivo ao salvar', () => {
+  const produto=produtoPorChave('P-0-0');
+  const estoque=[['P-0-0',2,0]];
+  const save=montarSave({economia:{},estoque,escolha:{},caixas:5,jogador:{x:0,z:4},maquinas:[],funcionarios:[{x:0,z:3,genero:'mulher',carga:[{produto,defeito:true}]},{x:1,z:3,androide:true,carga:[{produto,defeito:false}]}]});
+  assert.deepEqual(save.estoque,[['P-0-0',4,1]]);
+  assert.deepEqual(estoque,[['P-0-0',2,0]]);
+  assert.equal(save.funcionarios.length,1);
+  assert.equal(lerSave(JSON.stringify(save)).estoque[0][1],4);
+});
 console.log(`\n${ok} testes passaram.`);
 
