@@ -144,7 +144,7 @@ const ambiente = criarAmbiente(cena, renderer);
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 400);
 
 criarCenario(cena);
-criarTerreno(cena);
+const terrenoPrincipal = criarTerreno(cena);
 const visualExpansao = criarExpansao(cena);
 const cursor = criarCursor(cena);
 
@@ -176,6 +176,7 @@ let escritorioRegistrado = false;
 
 function sincronizarConstrucaoVisual() {
   definirTerrenoExpandido(temTerreno(construcao));
+  terrenoPrincipal.userData.expandir(temTerreno(construcao));
   visualExpansao.atualizar(construcao.nivel);
   if (construcao.nivel >= 2 && !escritorioRegistrado) {
     registrarObstaculo(13.25, 18.75, -9.75, -5.25);
@@ -184,6 +185,9 @@ function sincronizarConstrucaoVisual() {
 }
 
 const rotulos = criarRotulos(document.getElementById('rotulos'), camera);
+rotulos.adicionar({ x: 0, y: 4, z: 0 }, { texto: () => 'OFICINA · produção', classe: 'estacao' });
+rotulos.adicionar({ x: 16, y: 1, z: 2 }, { texto: () => construcao.nivel >= 1 ? 'SEU TERRENO · área de expansão' : 'TERRENO À VENDA · G · R$ 350', classe: 'estacao' });
+rotulos.adicionar({ x: 16, y: 4.2, z: -7.5 }, { texto: () => construcao.nivel >= 2 ? 'SEU ESCRITÓRIO · equipe até 10' : 'ÁREA DO FUTURO ESCRITÓRIO', classe: 'estacao' });
 rotulos.adicionar({ x: ESTOQUE_PONTO.x, y: 2.8, z: ESTOQUE_PONTO.z }, { texto: () => `ESTOQUE · ${totalNoEstoque()}`, classe: 'estacao' });
 rotulos.adicionar({ x: EXPEDICAO.x, y: 3.1, z: EXPEDICAO.z }, {
   texto: () => (quadro.ativos.some((c) => quantidadeDe(c.chave) >= c.quantidade) ? 'EXPEDIÇÃO · contrato pronto!' : 'EXPEDIÇÃO'),
