@@ -50,7 +50,8 @@ teste('defeito sobe com o desgaste; quebra só acima do limiar', () => {
   assert.equal(chanceDefeito(0), 0.03);
   assert.ok(Math.abs(chanceDefeito(100) - 0.28) < 1e-9);
   assert.equal(chanceQuebra(LIMIAR_QUEBRA - 1), 0);
-  assert.ok(chanceQuebra(85) > 0 && chanceQuebra(85) < 1);
+  assert.equal(chanceQuebra(85), 0);
+  assert.ok(chanceQuebra(95) > 0 && chanceQuebra(95) <= 0.02);
   assert.equal(chanceQuebra(100), 1);
 });
 
@@ -59,7 +60,7 @@ teste('cada caixa desgasta a máquina; com 100% ela quebra', () => {
   for (let i = 0; i < 10; i++) registrarProducao(m, nunca);
   assert.equal(m.desgaste, 10 * DESGASTE_POR_CAIXA);
   assert.ok(!m.quebrada);
-  m.desgaste = 99;
+  m.desgaste = 99.5;
   const r = registrarProducao(m, nunca);
   assert.equal(m.desgaste, 100);
   assert.equal(r.quebrou, true);
@@ -200,3 +201,4 @@ teste('energia vai e volta pelo save e dados ruins são corrigidos', () => {
 });
 
 console.log(`\n${ok} testes passaram.`);
+
