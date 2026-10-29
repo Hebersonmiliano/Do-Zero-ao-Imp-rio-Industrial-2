@@ -58,7 +58,7 @@ import {
   novoQuadro,
 } from './contratos.js';
 import { ROTAS, atualizarEntregas, despachar, exportarFrota, importarFrota, novaFrota } from './entregas.js';
-import { exportarConstrucao, importarConstrucao, melhorar, novaConstrucao, proximaMelhoria, temTerreno } from './construcao.js';
+import { exportarConstrucao, importarConstrucao, limiteEquipe, melhorar, novaConstrucao, proximaMelhoria, temTerreno } from './construcao.js';
 import { criarFuncionario, atualizarFuncionario, ESTOQUE_PONTO } from './funcionarios.js';
 import {
   CUSTO_INSPETOR,
@@ -196,7 +196,7 @@ const cameraJogo = criarCameraJogo(camera, renderer.domElement, jogador.position
 
 const maquinas = [];
 const funcionarios = [];
-const LIMITE_FUNCIONARIOS = 3;
+const LIMITE_FUNCIONARIOS = 10; // teto para importação; contratação depende da propriedade
 let caixas = 0;
 let etapasConcluidas = 0;
 let painelCampanhaTimer = 0;
@@ -240,7 +240,7 @@ function atualizarPlacar() {
   elEstoque.textContent = totalNoEstoque();
   elDetalheEstoque.textContent = resumoEstoque();
   elDinheiro.textContent = reais(getDinheiro());
-  elFuncionarios.textContent = funcionarios.length;
+  elFuncionarios.textContent = `${funcionarios.length}/${limiteEquipe(construcao)}`;
   elLinha.textContent = resumoLinha();
   cacamba.atualizar(refugo);
   const defeitos = defeituosasNoEstoque();
@@ -251,7 +251,7 @@ function atualizarPlacar() {
   const proxima = proximaMelhoria(construcao);
   elPropriedade.textContent = proxima
     ? `Nível ${construcao.nivel}/3 · próxima: ${proxima.nome} (R$ ${proxima.custo})`
-    : 'Nível 3/3 · complexo industrial concluído';
+    : 'Terreno, escritório e fachada prontos · equipe até 10 (F contrata)';
   atualizarPainelFrota();
   prateleira.atualizar(
     exportarEstoque().map(([chave, quantidade]) => ({ cor: produtoPorChave(chave)?.cor ?? 0xc89b5a, quantidade })),
@@ -412,8 +412,8 @@ function automatizarMaquina() {
 
 // Contrata um funcionário que aparece perto da oficina e trabalha sozinho.
 function contratarFuncionario() {
-  if (funcionarios.length >= LIMITE_FUNCIONARIOS) {
-    falha(`Limite de ${LIMITE_FUNCIONARIOS} funcionários.`);
+  if (funcionarios.length >= limiteEquipe(construcao)) {
+    falha(`Limite de ${limiteEquipe(construcao)} funcionários. ${construcao.nivel === 0 ? 'Compre o terreno com G para liberar 6.' : construcao.nivel === 1 ? 'Construa o escritório com G para liberar 10.' : 'Equipe completa.'}`);
     return;
   }
   if (!pagar(CUSTO_FUNCIONARIO)) {
