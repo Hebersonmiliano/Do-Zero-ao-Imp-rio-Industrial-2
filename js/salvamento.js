@@ -72,7 +72,7 @@ export function montarSave({ economia, estoque, escolha, contratos, energia = nu
 }
 
 // Lê e valida um save. Devolve null se o texto não for um save utilizável.
-export function lerSave(texto, { limite = 11.5, capacidade = 8, maxFuncionarios = 3 } = {}) {
+export function lerSave(texto, { limite = 11.5, capacidade = 8, maxFuncionarios = 10 } = {}) {
   let dados;
   try {
     dados = JSON.parse(texto);
@@ -130,8 +130,8 @@ export function lerSave(texto, { limite = 11.5, capacidade = 8, maxFuncionarios 
     jogador: { x: dentroX(dados.jogador?.x), z: dentro(dados.jogador?.z ?? 4, limite) },
     maquinas,
     funcionarios: lista(dados.funcionarios)
-      .slice(0, maxFuncionarios)
-      .map((f) => ({ x: dentro(f?.x, limite), z: dentro(f?.z, limite) })),
+      .slice(0, Math.min(maxFuncionarios, nivelConstrucao >= 2 ? 10 : nivelConstrucao >= 1 ? 6 : 3))
+      .map((f) => ({ x: dentroX(f?.x), z: dentro(f?.z, limite) })),
   };
 }
 
