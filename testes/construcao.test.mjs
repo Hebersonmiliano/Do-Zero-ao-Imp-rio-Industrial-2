@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import { limiteEquipe } from '../js/construcao.js';
+assert.equal(limiteEquipe({ nivel: 0 }), 3);
+assert.equal(limiteEquipe({ nivel: 1 }), 6);
+assert.equal(limiteEquipe({ nivel: 2 }), 10);
+assert.equal(limiteEquipe({ nivel: 3 }), 10);
 import { exportarConstrucao, importarConstrucao, melhorar, novaConstrucao, proximaMelhoria, temEscritorio, temFachada, temTerreno } from '../js/construcao.js';
 import { cabeAqui, definirTerrenoExpandido } from '../js/grade.js';
 
