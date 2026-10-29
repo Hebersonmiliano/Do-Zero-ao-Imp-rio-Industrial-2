@@ -6,11 +6,12 @@ export const MELHORIAS = [
 ];
 
 export const novaConstrucao = () => ({ nivel: 0 });
+export const limiteEquipe = (estado) => estado.nivel >= 2 ? 10 : estado.nivel >= 1 ? 6 : 3;
 export const proximaMelhoria = (estado) => MELHORIAS[estado.nivel] ?? null;
 
 export function melhorar(estado, pagar) {
   const melhoria = proximaMelhoria(estado);
-  if (!melhoria) return { erro: 'Todas as melhorias já foram construídas.' };
+  if (!melhoria) return { erro: 'Terreno, escritório e fachada concluídos. Contrate funcionários com F ou pelo botão Funcionário (até 10). ' };
   if (!pagar(melhoria.custo)) return { erro: `${melhoria.nome} custa R$ ${melhoria.custo}.` };
   estado.nivel += 1;
   return { melhoria };
